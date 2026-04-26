@@ -22,19 +22,41 @@ export default function FilterChips({ filters, onChange }) {
     setOpenDropdown(null);
   }
 
-  const chipStyle = (active) => ({
+  // Short labels for inactive/active states
+  function categoryLabel() {
+    if (!filters.category) return 'Category';
+    const cat = CATEGORY_LIST.find((c) => c.id === filters.category);
+    return cat ? `${cat.emoji} ${cat.label.split('/')[0].trim()}` : 'Category';
+  }
+
+  function severityLabel() {
+    if (!filters.severity) return 'Severity';
+    return filters.severity.charAt(0).toUpperCase() + filters.severity.slice(1);
+  }
+
+  function statusLabel() {
+    if (!filters.status) return 'Status';
+    return filters.status.charAt(0).toUpperCase() + filters.status.slice(1);
+  }
+
+  const chipBtn = (active) => ({
+    width: '100%',
     display: 'flex',
     alignItems: 'center',
-    gap: '4px',
-    padding: '6px 12px',
+    justifyContent: 'center',
+    gap: '3px',
+    padding: '7px 6px',
     borderRadius: '20px',
-    border: `1.5px solid ${active ? '#F77F00' : 'rgba(28,28,28,0.2)'}`,
+    border: `1.5px solid ${active ? '#F77F00' : 'rgba(28,28,28,0.18)'}`,
     background: active ? '#FFF3E0' : 'white',
     color: active ? '#F77F00' : '#1C1C1C',
-    fontSize: '13px',
+    fontSize: '12px',
     fontWeight: '600',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    minWidth: 0,
   });
 
   return (
@@ -46,20 +68,21 @@ export default function FilterChips({ filters, onChange }) {
         zIndex: 50,
       }}
     >
+      {/* Single row — no scroll, all 4 items always visible */}
       <div
-        className="flex items-center gap-2 px-3"
-        style={{ height: '48px', overflowX: 'auto', scrollbarWidth: 'none' }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '0 8px',
+          height: '48px',
+        }}
       >
         {/* Category chip */}
-        <div style={{ position: 'relative' }}>
-          <button
-            style={chipStyle(!!filters.category)}
-            onClick={() => toggleDropdown('category')}
-          >
-            {filters.category
-              ? `${CATEGORY_LIST.find((c) => c.id === filters.category)?.emoji} ${CATEGORY_LIST.find((c) => c.id === filters.category)?.label}`
-              : 'All Categories'}
-            <span style={{ fontSize: '10px' }}>▾</span>
+        <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+          <button style={chipBtn(!!filters.category)} onClick={() => toggleDropdown('category')}>
+            {categoryLabel()}
+            <span style={{ fontSize: '9px', flexShrink: 0 }}>▾</span>
           </button>
           {openDropdown === 'category' && (
             <Dropdown
@@ -74,13 +97,10 @@ export default function FilterChips({ filters, onChange }) {
         </div>
 
         {/* Severity chip */}
-        <div style={{ position: 'relative' }}>
-          <button
-            style={chipStyle(!!filters.severity)}
-            onClick={() => toggleDropdown('severity')}
-          >
-            {filters.severity ? `${filters.severity.charAt(0).toUpperCase()}${filters.severity.slice(1)}` : 'All Severity'}
-            <span style={{ fontSize: '10px' }}>▾</span>
+        <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+          <button style={chipBtn(!!filters.severity)} onClick={() => toggleDropdown('severity')}>
+            {severityLabel()}
+            <span style={{ fontSize: '9px', flexShrink: 0 }}>▾</span>
           </button>
           {openDropdown === 'severity' && (
             <Dropdown
@@ -95,13 +115,10 @@ export default function FilterChips({ filters, onChange }) {
         </div>
 
         {/* Status chip */}
-        <div style={{ position: 'relative' }}>
-          <button
-            style={chipStyle(!!filters.status)}
-            onClick={() => toggleDropdown('status')}
-          >
-            {filters.status ? `${filters.status.charAt(0).toUpperCase()}${filters.status.slice(1)}` : 'All Status'}
-            <span style={{ fontSize: '10px' }}>▾</span>
+        <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+          <button style={chipBtn(!!filters.status)} onClick={() => toggleDropdown('status')}>
+            {statusLabel()}
+            <span style={{ fontSize: '9px', flexShrink: 0 }}>▾</span>
           </button>
           {openDropdown === 'status' && (
             <Dropdown
@@ -115,26 +132,27 @@ export default function FilterChips({ filters, onChange }) {
           )}
         </div>
 
-        {/* Map / List toggle */}
+        {/* Map / List toggle — fixed width, never pushed off screen */}
         <div
-          className="flex items-center"
           style={{
-            marginLeft: 'auto',
-            borderRadius: '20px',
-            border: '1.5px solid rgba(28,28,28,0.2)',
-            overflow: 'hidden',
             flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            borderRadius: '20px',
+            border: '1.5px solid rgba(28,28,28,0.18)',
+            overflow: 'hidden',
           }}
         >
           <Link
             href="/"
             style={{
-              padding: '5px 14px',
-              fontSize: '13px',
+              padding: '6px 12px',
+              fontSize: '12px',
               fontWeight: '600',
               background: isMapView ? '#1C1C1C' : 'white',
               color: isMapView ? 'white' : '#1C1C1C',
               textDecoration: 'none',
+              display: 'block',
             }}
           >
             Map
@@ -142,12 +160,13 @@ export default function FilterChips({ filters, onChange }) {
           <Link
             href="/list"
             style={{
-              padding: '5px 14px',
-              fontSize: '13px',
+              padding: '6px 12px',
+              fontSize: '12px',
               fontWeight: '600',
               background: !isMapView ? '#1C1C1C' : 'white',
               color: !isMapView ? 'white' : '#1C1C1C',
               textDecoration: 'none',
+              display: 'block',
             }}
           >
             List
@@ -155,7 +174,7 @@ export default function FilterChips({ filters, onChange }) {
         </div>
       </div>
 
-      {/* Close on outside click */}
+      {/* Close dropdown on outside click */}
       {openDropdown && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 40 }}
@@ -171,7 +190,7 @@ function Dropdown({ items, onSelect, selected }) {
     <div
       style={{
         position: 'absolute',
-        top: '40px',
+        top: '44px',
         left: 0,
         background: 'white',
         borderRadius: '10px',
