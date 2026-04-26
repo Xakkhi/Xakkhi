@@ -15,9 +15,14 @@ export default function MapView({ filters, reports = [] }) {
   useEffect(() => {
     if (leafletMapRef.current) return;
 
+    let cancelled = false;
+
     async function initMap() {
       const L = (await import('leaflet')).default;
       await import('leaflet/dist/leaflet.css');
+
+      // Guard against StrictMode double-invoke: cleanup may have fired during the awaits
+      if (cancelled || leafletMapRef.current) return;
 
       const map = L.map(mapRef.current, {
         center: CITY_CENTER,
@@ -86,6 +91,7 @@ export default function MapView({ filters, reports = [] }) {
     initMap();
 
     return () => {
+      cancelled = true;
       if (leafletMapRef.current) {
         leafletMapRef.current.remove();
         leafletMapRef.current = null;
@@ -110,7 +116,7 @@ export default function MapView({ filters, reports = [] }) {
   const totalCount = reports.length;
 
   return (
-    <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', inset: 0 }}>
       {/* Map container */}
       <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
