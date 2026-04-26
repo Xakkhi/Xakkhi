@@ -25,7 +25,7 @@ export default function HomePage() {
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0 }}>
         <MapView filters={filters} reports={reports} />
 
-        {/* Bottom CTA */}
+        {/* Bottom CTA — z-index 1 is above MapView root (z-index 0) */}
         <div
           style={{
             position: 'absolute',
@@ -37,7 +37,7 @@ export default function HomePage() {
             display: 'flex',
             gap: '10px',
             alignItems: 'flex-end',
-            zIndex: 100,
+            zIndex: 1,
           }}
         >
           <Link

@@ -116,9 +116,11 @@ export default function MapView({ filters, reports = [] }) {
   const totalCount = reports.length;
 
   return (
-    <div style={{ position: 'absolute', inset: 0 }}>
-      {/* Map container */}
-      <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+    <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+      {/* Map container — z-index:0 creates a stacking context so Leaflet's
+          internal panes (z-index 200–1000) are contained here and cannot
+          bleed out to cover our overlay elements. */}
+      <div ref={mapRef} style={{ width: '100%', height: '100%', position: 'relative', zIndex: 0 }} />
 
       {/* Loading overlay */}
       {!mapReady && (
@@ -131,7 +133,7 @@ export default function MapView({ filters, reports = [] }) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 200,
+            zIndex: 10,
           }}
         >
           <div style={{ textAlign: 'center' }}>
@@ -190,7 +192,7 @@ export default function MapView({ filters, reports = [] }) {
             backdropFilter: 'blur(8px)',
             borderRadius: '10px',
             padding: '8px 14px',
-            zIndex: 100,
+            zIndex: 10,
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
@@ -235,7 +237,7 @@ export default function MapView({ filters, reports = [] }) {
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '18px',
-            zIndex: 100,
+            zIndex: 10,
           }}
           aria-label="Locate me"
         >
@@ -272,7 +274,7 @@ function WardCard({ ward, onClose, reports }) {
         background: 'white',
         borderRadius: '16px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-        zIndex: 150,
+        zIndex: 20,
         overflow: 'hidden',
       }}
     >
