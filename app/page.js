@@ -1,0 +1,92 @@
+'use client';
+
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
+import FilterChips from '../components/FilterChips';
+
+const MapView = dynamic(() => import('../components/MapView'), { ssr: false });
+
+export default function HomePage() {
+  const [filters, setFilters] = useState({
+    category: null,
+    severity: null,
+    status: null,
+  });
+
+  // Reports will be fetched from Supabase on Day 4
+  const reports = [];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
+      <FilterChips filters={filters} onChange={setFilters} />
+
+      {/* Map fills remaining space */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0 }}>
+        <MapView filters={filters} reports={reports} />
+
+        {/* Bottom CTA */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '12px',
+            background: 'linear-gradient(to top, rgba(250,250,248,0.95) 60%, transparent)',
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'flex-end',
+            zIndex: 100,
+          }}
+        >
+          <Link
+            href="/report"
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              background: '#F77F00',
+              color: 'white',
+              borderRadius: '14px',
+              padding: '16px',
+              fontWeight: '800',
+              fontSize: '16px',
+              textDecoration: 'none',
+              boxShadow: '0 4px 16px rgba(247,127,0,0.4)',
+              letterSpacing: '-0.2px',
+            }}
+          >
+            <span style={{ fontSize: '20px' }}>+</span>
+            Report an Issue
+          </Link>
+
+          <Link
+            href="/leaderboard"
+            style={{
+              width: '54px',
+              height: '54px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#1C1C1C',
+              color: 'white',
+              borderRadius: '14px',
+              textDecoration: 'none',
+              flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            }}
+          >
+            <span style={{ fontSize: '20px' }}>📊</span>
+            <span style={{ fontSize: '9px', fontWeight: '700', opacity: 0.7, marginTop: '1px' }}>
+              {reports.length}
+            </span>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
