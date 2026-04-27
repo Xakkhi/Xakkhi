@@ -105,7 +105,7 @@ export default function ReportForm() {
   }
 
   const cat = category ? CATEGORIES[category] : null;
-  const canSubmit = !!photo && !!category && !!severity && locationStatus === 'found' && !submitting;
+  const canSubmit = !!photo && !!category && !!severity && locationStatus === 'found' && !!landmark.trim() && !submitting;
 
   // ─── Desktop gate ───────────────────────────────────────────────────────────
   if (isDesktop) return <QRCodeModal />;
@@ -126,7 +126,7 @@ export default function ReportForm() {
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          padding: '14px 16px 12px',
+          padding: '9px 16px',
           background: 'white',
           borderBottom: '1px solid rgba(0,0,0,0.07)',
           position: 'sticky',
@@ -185,7 +185,7 @@ export default function ReportForm() {
               onClick={() => photoInputRef.current?.click()}
               style={{
                 width: '100%',
-                aspectRatio: '4/3',
+                aspectRatio: '16/9',
                 border: '2.5px dashed rgba(28,28,28,0.2)',
                 borderRadius: '14px',
                 background: 'white',
@@ -194,15 +194,15 @@ export default function ReportForm() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '10px',
+                gap: '6px',
               }}
             >
-              <span style={{ fontSize: '44px', lineHeight: 1 }}>📷</span>
-              <div style={{ fontWeight: '700', fontSize: '16px', color: '#1C1C1C' }}>
+              <span style={{ fontSize: '34px', lineHeight: 1 }}>📷</span>
+              <div style={{ fontWeight: '700', fontSize: '14px', color: '#1C1C1C' }}>
                 Tap to take photo
               </div>
-              <div style={{ fontSize: '12px', color: 'rgba(28,28,28,0.45)', textAlign: 'center', lineHeight: 1.4 }}>
-                Rear camera · Live capture only<br />No gallery uploads allowed
+              <div style={{ fontSize: '11px', color: 'rgba(28,28,28,0.45)', textAlign: 'center', lineHeight: 1.4 }}>
+                Rear camera · Live capture only · No gallery
               </div>
             </button>
           ) : (
@@ -211,7 +211,7 @@ export default function ReportForm() {
               <img
                 src={photoPreview}
                 alt="Captured issue"
-                style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }}
+                style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }}
               />
               <button
                 onClick={() => photoInputRef.current?.click()}
@@ -268,7 +268,7 @@ export default function ReportForm() {
                   key={c.id}
                   onClick={() => handleCategorySelect(c.id)}
                   style={{
-                    padding: '14px 10px',
+                    padding: '10px 8px',
                     borderRadius: '12px',
                     border: `2px solid ${active ? c.color : 'rgba(28,28,28,0.12)'}`,
                     background: active ? `${c.color}15` : 'white',
@@ -276,14 +276,14 @@ export default function ReportForm() {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '6px',
+                    gap: '4px',
                     gridColumn: CATEGORY_LIST.indexOf(c) === 4 ? '1 / -1' : 'auto',
                   }}
                 >
-                  <span style={{ fontSize: '28px', lineHeight: 1 }}>{c.emoji}</span>
+                  <span style={{ fontSize: '22px', lineHeight: 1 }}>{c.emoji}</span>
                   <span
                     style={{
-                      fontSize: '12px',
+                      fontSize: '11px',
                       fontWeight: '700',
                       color: active ? c.color : '#1C1C1C',
                       textAlign: 'center',
@@ -384,7 +384,7 @@ export default function ReportForm() {
         )}
 
         {/* ── STEP 5 · Landmark ───────────────────────────────────────────── */}
-        <Section step={cat ? 5 : 3} title="Landmark / Address" hint="Optional">
+        <Section step={cat ? 5 : 3} title="Landmark / Address" required>
           <textarea
             value={landmark}
             onChange={(e) => setLandmark(e.target.value)}
@@ -426,6 +426,7 @@ export default function ReportForm() {
               { label: 'Photo taken', done: !!photo },
               { label: 'Issue type selected', done: !!category },
               { label: 'Severity chosen', done: !!severity },
+              { label: 'Landmark entered', done: !!landmark.trim() },
               { label: 'GPS location found', done: locationStatus === 'found' },
             ].map(({ label, done }) => (
               <div
@@ -496,7 +497,7 @@ function LocationBar({ status, location, onRetry }) {
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
-          padding: '12px 16px',
+          padding: '7px 14px',
           background: 'white',
           borderBottom: '1px solid rgba(0,0,0,0.06)',
         }}
@@ -518,7 +519,7 @@ function LocationBar({ status, location, onRetry }) {
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
-          padding: '12px 16px',
+          padding: '7px 14px',
           background: '#F0FDF4',
           borderBottom: '1px solid rgba(22,163,74,0.15)',
         }}
@@ -578,7 +579,7 @@ function Section({ step, title, hint, required, children }) {
   return (
     <div
       style={{
-        padding: '20px 16px 4px',
+        padding: '12px 16px 4px',
         borderBottom: '1px solid rgba(0,0,0,0.05)',
         marginBottom: '4px',
       }}
@@ -586,9 +587,9 @@ function Section({ step, title, hint, required, children }) {
       <div
         style={{
           display: 'flex',
-          alignItems: 'baseline',
-          gap: '8px',
-          marginBottom: '12px',
+          alignItems: 'center',
+          gap: '7px',
+          marginBottom: '8px',
         }}
       >
         <span
@@ -597,8 +598,8 @@ function Section({ step, title, hint, required, children }) {
             color: 'white',
             fontSize: '10px',
             fontWeight: '700',
-            width: '20px',
-            height: '20px',
+            width: '18px',
+            height: '18px',
             borderRadius: '50%',
             display: 'inline-flex',
             alignItems: 'center',
@@ -608,16 +609,16 @@ function Section({ step, title, hint, required, children }) {
         >
           {step}
         </span>
-        <span style={{ fontWeight: '800', fontSize: '16px', color: '#1C1C1C' }}>{title}</span>
+        <span style={{ fontWeight: '800', fontSize: '15px', color: '#1C1C1C' }}>{title}</span>
         {required && (
-          <span style={{ color: '#DC2626', fontSize: '12px', fontWeight: '600' }}>required</span>
+          <span style={{ color: '#DC2626', fontSize: '16px', fontWeight: '700', lineHeight: 1 }}>*</span>
         )}
         {hint && (
           <span style={{ color: 'rgba(28,28,28,0.4)', fontSize: '12px' }}>{hint}</span>
         )}
       </div>
       {children}
-      <div style={{ height: '16px' }} />
+      <div style={{ height: '10px' }} />
     </div>
   );
 }
