@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import 'leaflet/dist/leaflet.css';
 import { WARDS, CITY_CENTER } from '../data/wards';
 import { CATEGORIES } from '../data/categories';
 
@@ -18,74 +19,82 @@ export default function MapView({ filters, reports = [] }) {
     let cancelled = false;
 
     async function initMap() {
-      const L = (await import('leaflet')).default;
-      await import('leaflet/dist/leaflet.css');
+      try {
+        const L = (await import('leaflet')).default;
 
-      // Guard against StrictMode double-invoke: cleanup may have fired during the awaits
-      if (cancelled || leafletMapRef.current) return;
+        // Guard against StrictMode double-invoke: cleanup may have fired during the await
+        if (cancelled || leafletMapRef.current) return;
 
-      const map = L.map(mapRef.current, {
-        center: CITY_CENTER,
-        zoom: 14,
-        zoomControl: false,
-        attributionControl: true,
-      });
-
-      // Muted OSM tiles
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
-        maxZoom: 19,
-      }).addTo(map);
-
-      // Zoom controls (bottom right)
-      L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-      // Ward markers
-      WARDS.forEach((ward) => {
-        const wardReports = reports.filter((r) => r.ward_number === ward.wardNumber);
-        const hasReports = wardReports.length > 0;
-
-        const icon = L.divIcon({
-          className: '',
-          html: `<div class="ward-marker${hasReports ? ' has-reports' : ''}">${ward.wardNumber}</div>`,
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
+        const map = L.map(mapRef.current, {
+          center: CITY_CENTER,
+          zoom: 14,
+          zoomControl: false,
+          attributionControl: true,
         });
 
-        const marker = L.marker([ward.lat, ward.lng], { icon })
-          .addTo(map)
-          .on('click', () => {
-            setSelectedWard(ward);
-            map.panTo([ward.lat, ward.lng], { animate: true, duration: 0.4 });
+        // Muted OSM tiles
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
+          maxZoom: 19,
+        }).addTo(map);
+
+        // Zoom controls (bottom right)
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        // Ward markers
+        WARDS.forEach((ward) => {
+          const wardReports = reports.filter((r) => r.ward_number === ward.wardNumber);
+          const hasReports = wardReports.length > 0;
+
+          const icon = L.divIcon({
+            className: '',
+            html: `<div class="ward-marker${hasReports ? ' has-reports' : ''}">${ward.wardNumber}</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
           });
 
-        markersRef.current.push(marker);
-      });
+          const marker = L.marker([ward.lat, ward.lng], { icon })
+            .addTo(map)
+            .on('click', () => {
+              setSelectedWard(ward);
+              map.panTo([ward.lat, ward.lng], { animate: true, duration: 0.4 });
+            });
 
-      // Report markers (colored by category)
-      reports.forEach((report) => {
-        const cat = CATEGORIES[report.category];
-        if (!cat) return;
-
-        const severitySize = { minor: 10, moderate: 14, severe: 18, critical: 22 };
-        const size = severitySize[report.severity] || 14;
-
-        const icon = L.divIcon({
-          className: '',
-          html: `<div style="
-            width:${size}px;height:${size}px;border-radius:50%;
-            background:${cat.color};border:2px solid white;
-            box-shadow:0 1px 4px rgba(0,0,0,0.3);
-          "></div>`,
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2],
+          markersRef.current.push(marker);
         });
 
-        L.marker([report.lat, report.lng], { icon }).addTo(map);
-      });
+        // Report markers (colored by category)
+        reports.forEach((report) => {
+          const cat = CATEGORIES[report.category];
+          if (!cat) return;
 
-      leafletMapRef.current = map;
-      setMapReady(true);
+          const severitySize = { minor: 10, moderate: 14, severe: 18, critical: 22 };
+          const size = severitySize[report.severity] || 14;
+
+          const icon = L.divIcon({
+            className: '',
+            html: `<div style="
+              width:${size}px;height:${size}px;border-radius:50%;
+              background:${cat.color};border:2px solid white;
+              box-shadow:0 1px 4px rgba(0,0,0,0.3);
+            "></div>`,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
+          });
+
+          L.marker([report.lat, report.lng], { icon }).addTo(map);
+        });
+
+        leafletMapRef.current = map;
+
+        // Force Leaflet to recalculate container size — catches any edge case
+        // where the container was measured before layout was complete
+        map.invalidateSize();
+
+        if (!cancelled) setMapReady(true);
+      } catch (err) {
+        console.error('[MapView] Leaflet init failed:', err);
+      }
     }
 
     initMap();
