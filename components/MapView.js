@@ -9,20 +9,8 @@ export default function MapView({ filters, reports = [] }) {
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
   const markersRef = useRef([]);
-  const mountTimeRef = useRef(Date.now());
   const [selectedWard, setSelectedWard] = useState(null);
   const [mapReady, setMapReady] = useState(false);
-
-  // Enforce a minimum loading screen duration so the splash never flashes
-  function showMap() {
-    const elapsed = Date.now() - mountTimeRef.current;
-    const MIN_MS = 2200;
-    if (elapsed >= MIN_MS) {
-      setMapReady(true);
-    } else {
-      setTimeout(() => setMapReady(true), MIN_MS - elapsed);
-    }
-  }
 
   // Init map once
   useEffect(() => {
@@ -103,7 +91,7 @@ export default function MapView({ filters, reports = [] }) {
         // where the container was measured before layout was complete
         map.invalidateSize();
 
-        if (!cancelled) showMap();
+        if (!cancelled) setMapReady(true);
       } catch (err) {
         console.error('[MapView] Leaflet init failed:', err);
       }
@@ -142,57 +130,6 @@ export default function MapView({ filters, reports = [] }) {
           internal panes (z-index 200–1000) are contained here and cannot
           bleed out to cover our overlay elements. */}
       <div ref={mapRef} style={{ width: '100%', height: '100%', position: 'relative', zIndex: 0 }} />
-
-      {/* Loading overlay */}
-      {!mapReady && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: '#111111',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10,
-          }}
-        >
-          <div style={{ textAlign: 'center' }}>
-            <div
-              style={{
-                fontSize: '48px',
-                fontWeight: '800',
-                fontFamily: 'Fraunces, serif',
-                color: '#FFFFFF',
-                letterSpacing: '-1px',
-                lineHeight: 1.1,
-              }}
-            >
-              Xakkhi{' '}
-              <span
-                style={{
-                  color: '#F77F00',
-                  fontFamily: 'Noto Sans Bengali, sans-serif',
-                  fontWeight: '700',
-                }}
-              >
-                সাক্ষী
-              </span>
-            </div>
-            <p
-              style={{
-                marginTop: '20px',
-                color: '#6B7280',
-                fontSize: '15px',
-                fontWeight: '500',
-                letterSpacing: '0.01em',
-              }}
-            >
-              Loading Dibrugarh map…
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Stats overlay — top left */}
       {mapReady && (
