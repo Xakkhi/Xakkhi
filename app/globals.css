@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "leaflet/dist/leaflet.css";
 
 @theme {
   --color-ink: #1C1C1C;
@@ -35,22 +34,6 @@ body {
   color: #1C1C1C;
   font-family: 'DM Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
-}
-
-/* Leaflet overrides */
-.leaflet-container {
-  font-family: 'DM Sans', sans-serif;
-  background: #e8e0d8;
-}
-
-.leaflet-control-zoom a {
-  color: #1C1C1C !important;
-  font-weight: 700;
-}
-
-.leaflet-control-attribution {
-  font-size: 9px;
-  opacity: 0.6;
 }
 
 /* Ward marker */
@@ -89,19 +72,3 @@ body {
   cursor: pointer;
 }
 
-/* Ward popup */
-.ward-popup .leaflet-popup-content-wrapper {
-  border-radius: 12px;
-  padding: 0;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-}
-
-.ward-popup .leaflet-popup-content {
-  margin: 0;
-  min-width: 200px;
-}
-
-.ward-popup .leaflet-popup-tip {
-  background: white;
-}

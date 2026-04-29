@@ -4,96 +4,131 @@ import { useEffect, useRef, useState } from 'react';
 import { WARDS, CITY_CENTER } from '../data/wards';
 import { CATEGORIES } from '../data/categories';
 
+const MAPPLS_KEY = process.env.NEXT_PUBLIC_MAPPLS_KEY;
+
+// ─── SDK loader ────────────────────────────────────────────────────────────────
+// Singleton promise — safe across React StrictMode double-invocations.
+let _sdkPromise = null;
+
+function loadMapplsSDK() {
+  if (_sdkPromise) return _sdkPromise;
+  _sdkPromise = new Promise((resolve, reject) => {
+    // Already loaded by a previous mount
+    if (window.mappls) { resolve(); return; }
+
+    // Expose callback that the SDK script calls when ready
+    window.__mapplsSDKReady = () => resolve();
+
+    const script = document.createElement('script');
+    script.src = `https://apis.mappls.com/advancedmaps/api/${MAPPLS_KEY}/map_sdk?layer=vector&v=3.0&callback=__mapplsSDKReady`;
+    script.async = true;
+    script.onerror = (err) => {
+      _sdkPromise = null; // allow retry on next mount
+      reject(new Error('Mappls SDK failed to load. Check NEXT_PUBLIC_MAPPLS_KEY.'));
+    };
+    document.head.appendChild(script);
+  });
+  return _sdkPromise;
+}
+
+// ─── Icon helpers ──────────────────────────────────────────────────────────────
+// Build SVG data-URI icons so we don't depend on HTML-marker support.
+
+function wardSVG(wardNumber, hasReports) {
+  const fill = hasReports ? '#F77F00' : '#1C1C1C';
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28">` +
+    `<circle cx="14" cy="14" r="12" fill="${fill}" stroke="white" stroke-width="2"/>` +
+    `<text x="14" y="14" text-anchor="middle" dominant-baseline="central" ` +
+    `fill="white" font-size="10" font-weight="700" font-family="DM Sans,sans-serif">${wardNumber}</text>` +
+    `</svg>`;
+  return 'data:image/svg+xml;base64,' + btoa(svg);
+}
+
+function dotSVG(color, size) {
+  const r = Math.max(size / 2 - 2, 2);
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">` +
+    `<circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="${color}" stroke="white" stroke-width="2"/>` +
+    `</svg>`;
+  return 'data:image/svg+xml;base64,' + btoa(svg);
+}
+
+// ─── Component ─────────────────────────────────────────────────────────────────
+
 export default function MapView({ filters, reports = [] }) {
-  const mapRef = useRef(null);
-  const leafletMapRef = useRef(null);
-  const markersRef = useRef([]);
+  const mapRef        = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markersRef    = useRef([]);
   const [selectedWard, setSelectedWard] = useState(null);
-  const [mapReady, setMapReady] = useState(false);
+  const [mapReady, setMapReady]         = useState(false);
 
   // Init map once
   useEffect(() => {
-    if (leafletMapRef.current) return;
-
+    if (mapInstanceRef.current) return;
     let cancelled = false;
 
     async function initMap() {
       try {
-        const L = (await import('leaflet')).default;
+        await loadMapplsSDK();
+        if (cancelled || mapInstanceRef.current) return;
 
-        // Guard against StrictMode double-invoke: cleanup may have fired during the await
-        if (cancelled || leafletMapRef.current) return;
-
-        const map = L.map(mapRef.current, {
-          center: CITY_CENTER,
+        const map = new window.mappls.Map(mapRef.current, {
+          center: CITY_CENTER,  // [lat, lng]
           zoom: 14,
-          zoomControl: false,
-          attributionControl: true,
+          zoomControl: false,   // we don't add a custom zoom control; Mappls shows one by default; set true if desired
         });
 
-        // CARTO Voyager — labels baked into tiles, no {r} param, fast 4-subdomain loading
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://carto.com/">CARTO</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          maxZoom: 19,
-          subdomains: 'abcd',
-        }).addTo(map);
+        // ── Wait for the map's own tiles + style to be fully ready ────────────
+        function onReady() {
+          if (cancelled) return;
 
-        // Zoom controls (bottom right)
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
+          // ── Ward markers ─────────────────────────────────────────────────────
+          WARDS.forEach((ward) => {
+            const hasReports = reports.some((r) => r.ward_number === ward.wardNumber);
 
-        // Ward markers
-        WARDS.forEach((ward) => {
-          const wardReports = reports.filter((r) => r.ward_number === ward.wardNumber);
-          const hasReports = wardReports.length > 0;
-
-          const icon = L.divIcon({
-            className: '',
-            html: `<div class="ward-marker${hasReports ? ' has-reports' : ''}">${ward.wardNumber}</div>`,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14],
-          });
-
-          const marker = L.marker([ward.lat, ward.lng], { icon })
-            .addTo(map)
-            .on('click', () => {
-              setSelectedWard(ward);
-              map.panTo([ward.lat, ward.lng], { animate: true, duration: 0.4 });
+            const marker = new window.mappls.Marker({
+              map,
+              position: { lat: ward.lat, lng: ward.lng },
+              icon: wardSVG(ward.wardNumber, hasReports),
             });
 
-          markersRef.current.push(marker);
-        });
+            window.mappls.addListener(marker, 'click', () => {
+              setSelectedWard(ward);
+              map.setCenter({ lat: ward.lat, lng: ward.lng });
+            });
 
-        // Report markers (colored by category)
-        reports.forEach((report) => {
-          const cat = CATEGORIES[report.category];
-          if (!cat) return;
-
-          const severitySize = { minor: 10, moderate: 14, severe: 18, critical: 22 };
-          const size = severitySize[report.severity] || 14;
-
-          const icon = L.divIcon({
-            className: '',
-            html: `<div style="
-              width:${size}px;height:${size}px;border-radius:50%;
-              background:${cat.color};border:2px solid white;
-              box-shadow:0 1px 4px rgba(0,0,0,0.3);
-            "></div>`,
-            iconSize: [size, size],
-            iconAnchor: [size / 2, size / 2],
+            markersRef.current.push(marker);
           });
 
-          L.marker([report.lat, report.lng], { icon }).addTo(map);
-        });
+          // ── Report markers ───────────────────────────────────────────────────
+          reports.forEach((report) => {
+            const cat = CATEGORIES[report.category];
+            if (!cat || !report.lat || !report.lng) return;
+            const sizeMap = { minor: 10, moderate: 14, severe: 18, critical: 22 };
+            const size = sizeMap[report.severity] || 14;
 
-        leafletMapRef.current = map;
+            new window.mappls.Marker({
+              map,
+              position: { lat: report.lat, lng: report.lng },
+              icon: dotSVG(cat.color, size),
+            });
+          });
 
-        // Force Leaflet to recalculate container size — catches any edge case
-        // where the container was measured before layout was complete
-        map.invalidateSize();
+          mapInstanceRef.current = map;
+          if (!cancelled) setMapReady(true);
+        }
 
-        if (!cancelled) setMapReady(true);
+        // Mappls v3 (MapLibre-based) fires 'load' when the style is ready.
+        // Guard against the rare case where it fired before we attached the listener.
+        if (typeof map.loaded === 'function' && map.loaded()) {
+          onReady();
+        } else {
+          map.on('load', onReady);
+        }
+
       } catch (err) {
-        console.error('[MapView] Leaflet init failed:', err);
+        console.error('[MapView] Mappls init failed:', err);
       }
     }
 
@@ -101,35 +136,33 @@ export default function MapView({ filters, reports = [] }) {
 
     return () => {
       cancelled = true;
-      if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
-        leafletMapRef.current = null;
+      if (mapInstanceRef.current) {
+        try { mapInstanceRef.current.remove(); } catch (_) { /* ignore */ }
+        mapInstanceRef.current = null;
       }
+      markersRef.current = [];
     };
   }, []);
 
-  // Locate me button handler
+  // ── Locate me ────────────────────────────────────────────────────────────────
   function handleLocate() {
-    if (!leafletMapRef.current) return;
+    if (!mapInstanceRef.current) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        leafletMapRef.current.setView([pos.coords.latitude, pos.coords.longitude], 16, {
-          animate: true,
-        });
+        mapInstanceRef.current.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        mapInstanceRef.current.setZoom(16);
       },
       () => alert('Location access denied. Please enable location in your browser.')
     );
   }
 
   const activeCount = reports.filter((r) => r.status === 'unresolved').length;
-  const totalCount = reports.length;
+  const totalCount  = reports.length;
 
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-      {/* Map container — z-index:0 creates a stacking context so Leaflet's
-          internal panes (z-index 200–1000) are contained here and cannot
-          bleed out to cover our overlay elements. */}
-      <div ref={mapRef} style={{ width: '100%', height: '100%', position: 'relative', zIndex: 0 }} />
+      {/* Map container */}
+      <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
       {/* Stats overlay — top left */}
       {mapReady && (
@@ -195,18 +228,19 @@ export default function MapView({ filters, reports = [] }) {
         </button>
       )}
 
-      {/* Ward info card (floating) */}
+      {/* Ward info card */}
       {selectedWard && (
         <WardCard ward={selectedWard} onClose={() => setSelectedWard(null)} reports={reports} />
       )}
-
     </div>
   );
 }
 
+// ─── Ward card ─────────────────────────────────────────────────────────────────
+
 function WardCard({ ward, onClose, reports }) {
   const wardReports = reports.filter((r) => r.ward_number === ward.wardNumber);
-  const isVacant = ward.commissionerPosition === 'Vacant';
+  const isVacant    = ward.commissionerPosition === 'Vacant';
 
   return (
     <div
@@ -283,15 +317,12 @@ function WardCard({ ward, onClose, reports }) {
 
       {/* Card body */}
       <div style={{ padding: '14px 16px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-        {/* Commissioner */}
         <div style={{ flex: 1 }}>
           <div style={{ color: 'rgba(28,28,28,0.5)', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>
             WARD COMMISSIONER
           </div>
           {isVacant ? (
-            <div style={{ color: '#DC2626', fontWeight: '700', fontSize: '14px' }}>
-              Vacant
-            </div>
+            <div style={{ color: '#DC2626', fontWeight: '700', fontSize: '14px' }}>Vacant</div>
           ) : (
             <>
               <div style={{ fontWeight: '700', fontSize: '15px', color: '#1C1C1C' }}>
@@ -322,7 +353,6 @@ function WardCard({ ward, onClose, reports }) {
           )}
         </div>
 
-        {/* Report count */}
         <div
           style={{
             textAlign: 'center',
