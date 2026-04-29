@@ -9,8 +9,20 @@ export default function MapView({ filters, reports = [] }) {
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
   const markersRef = useRef([]);
+  const mountTimeRef = useRef(Date.now());
   const [selectedWard, setSelectedWard] = useState(null);
   const [mapReady, setMapReady] = useState(false);
+
+  // Enforce a minimum loading screen duration so the splash never flashes
+  function showMap() {
+    const elapsed = Date.now() - mountTimeRef.current;
+    const MIN_MS = 2200;
+    if (elapsed >= MIN_MS) {
+      setMapReady(true);
+    } else {
+      setTimeout(() => setMapReady(true), MIN_MS - elapsed);
+    }
+  }
 
   // Init map once
   useEffect(() => {
@@ -91,7 +103,7 @@ export default function MapView({ filters, reports = [] }) {
         // where the container was measured before layout was complete
         map.invalidateSize();
 
-        if (!cancelled) setMapReady(true);
+        if (!cancelled) showMap();
       } catch (err) {
         console.error('[MapView] Leaflet init failed:', err);
       }
@@ -137,7 +149,7 @@ export default function MapView({ filters, reports = [] }) {
           style={{
             position: 'absolute',
             inset: 0,
-            background: '#FAFAF8',
+            background: '#111111',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -148,11 +160,12 @@ export default function MapView({ filters, reports = [] }) {
           <div style={{ textAlign: 'center' }}>
             <div
               style={{
-                fontSize: '28px',
+                fontSize: '48px',
                 fontWeight: '800',
                 fontFamily: 'Fraunces, serif',
-                color: '#1C1C1C',
-                letterSpacing: '-0.5px',
+                color: '#FFFFFF',
+                letterSpacing: '-1px',
+                lineHeight: 1.1,
               }}
             >
               Xakkhi{' '}
@@ -166,22 +179,13 @@ export default function MapView({ filters, reports = [] }) {
                 সাক্ষী
               </span>
             </div>
-            <div
-              style={{
-                marginTop: '16px',
-                width: '40px',
-                height: '3px',
-                background: '#F77F00',
-                borderRadius: '2px',
-                margin: '16px auto 0',
-                animation: 'pulse 1.2s ease-in-out infinite',
-              }}
-            />
             <p
               style={{
-                marginTop: '12px',
-                color: 'rgba(28,28,28,0.5)',
-                fontSize: '13px',
+                marginTop: '20px',
+                color: '#6B7280',
+                fontSize: '15px',
+                fontWeight: '500',
+                letterSpacing: '0.01em',
               }}
             >
               Loading Dibrugarh map…
@@ -259,12 +263,6 @@ export default function MapView({ filters, reports = [] }) {
         <WardCard ward={selectedWard} onClose={() => setSelectedWard(null)} reports={reports} />
       )}
 
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
-      `}</style>
     </div>
   );
 }
