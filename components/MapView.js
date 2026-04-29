@@ -31,10 +31,11 @@ export default function MapView({ filters, reports = [] }) {
           attributionControl: true,
         });
 
-        // Muted OSM tiles
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-          attribution: '© <a href="https://carto.com/">CARTO</a>, © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        // CARTO Voyager — labels baked into tiles, no {r} param, fast 4-subdomain loading
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://carto.com/">CARTO</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
           maxZoom: 19,
+          subdomains: 'abcd',
         }).addTo(map);
 
         // Zoom controls (bottom right)
