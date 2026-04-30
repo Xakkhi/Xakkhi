@@ -13,30 +13,36 @@ let _sdkPromise = null;
 function loadMapplsSDK() {
   if (_sdkPromise) return _sdkPromise;
   _sdkPromise = (async () => {
-    // Already loaded by a previous mount
     if (window.mappls) return;
 
-    // ── Step 1: get the key from the server ──────────────────────────────────
+    // ── Step 1: get key from server ──────────────────────────────────────────
     const res = await fetch('/api/map-config');
     const { key } = await res.json();
     console.log('[Mappls] Key received — length:', key?.length ?? 0);
 
     if (!key) {
-      _sdkPromise = null; // allow retry
+      _sdkPromise = null;
       throw new Error('[Mappls] No key returned from /api/map-config. Check NEXT_PUBLIC_MAPPLS_KEY in Vercel env vars.');
     }
 
-    // ── Step 2: inject the SDK script and wait for the callback ─────────────
+    // ── Step 2: trim + debug ─────────────────────────────────────────────────
+    const cleanKey = key.trim();
+    console.log('[Mappls] Key trimmed length:', cleanKey.length);
+    console.log('[Mappls] Key first 4 chars:', cleanKey.substring(0, 4));
+    console.log('[Mappls] Key last 4 chars:', cleanKey.substring(cleanKey.length - 4));
+    console.log('[Mappls] Full SDK URL:', `https://apis.mappls.com/advancedmaps/v1/${cleanKey}/map_sdk?layer=vector&v=3.0`);
+
+    // ── Step 3: inject SDK script and wait for callback ──────────────────────
     await new Promise((resolve, reject) => {
-      window.initMap = resolve; // Mappls calls this when ready
+      window.initMap = resolve;
 
       const script = document.createElement('script');
-      script.src = `https://apis.mappls.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=3.0&callback=initMap`;
+      script.src = `https://apis.mappls.com/advancedmaps/v1/${cleanKey}/map_sdk?layer=vector&v=3.0&libraries=&callback=initMap`;
       script.async = true;
-      script.onload  = () => console.log('[Mappls] SDK script loaded');
-      script.onerror = (e) => {
+      script.onload  = () => console.log('[Mappls] SDK script onload fired');
+      script.onerror = () => {
         _sdkPromise = null;
-        reject(new Error('[Mappls] SDK script failed to load — key may be invalid or network error.'));
+        reject(new Error('[Mappls] SDK script failed to load — key may be invalid or domain not whitelisted.'));
       };
       document.head.appendChild(script);
     });
@@ -45,7 +51,6 @@ function loadMapplsSDK() {
 }
 
 // ─── Icon helpers ──────────────────────────────────────────────────────────────
-// Build SVG data-URI icons so we don't depend on HTML-marker support.
 
 function wardSVG(wardNumber, hasReports) {
   const fill = hasReports ? '#F77F00' : '#1C1C1C';
@@ -70,13 +75,12 @@ function dotSVG(color, size) {
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export default function MapView({ filters, reports = [] }) {
-  const mapRef        = useRef(null);
+  const mapRef         = useRef(null);
   const mapInstanceRef = useRef(null);
-  const markersRef    = useRef([]);
+  const markersRef     = useRef([]);
   const [selectedWard, setSelectedWard] = useState(null);
   const [mapReady, setMapReady]         = useState(false);
 
-  // Init map once
   useEffect(() => {
     if (mapInstanceRef.current) return;
     let cancelled = false;
@@ -89,14 +93,13 @@ export default function MapView({ filters, reports = [] }) {
         const map = new window.mappls.Map(mapRef.current, {
           center: CITY_CENTER,  // [lat, lng]
           zoom: 14,
-          zoomControl: false,   // we don't add a custom zoom control; Mappls shows one by default; set true if desired
+          zoomControl: false,
         });
 
-        // ── Wait for the map's own tiles + style to be fully ready ────────────
         function onReady() {
           if (cancelled) return;
 
-          // ── Ward markers ─────────────────────────────────────────────────────
+          // Ward markers
           WARDS.forEach((ward) => {
             const hasReports = reports.some((r) => r.ward_number === ward.wardNumber);
 
@@ -114,7 +117,7 @@ export default function MapView({ filters, reports = [] }) {
             markersRef.current.push(marker);
           });
 
-          // ── Report markers ───────────────────────────────────────────────────
+          // Report markers
           reports.forEach((report) => {
             const cat = CATEGORIES[report.category];
             if (!cat || !report.lat || !report.lng) return;
@@ -132,8 +135,6 @@ export default function MapView({ filters, reports = [] }) {
           if (!cancelled) setMapReady(true);
         }
 
-        // Mappls v3 (MapLibre-based) fires 'load' when the style is ready.
-        // Guard against the rare case where it fired before we attached the listener.
         if (typeof map.loaded === 'function' && map.loaded()) {
           onReady();
         } else {
@@ -157,7 +158,6 @@ export default function MapView({ filters, reports = [] }) {
     };
   }, []);
 
-  // ── Locate me ────────────────────────────────────────────────────────────────
   function handleLocate() {
     if (!mapInstanceRef.current) return;
     navigator.geolocation.getCurrentPosition(
@@ -174,10 +174,8 @@ export default function MapView({ filters, reports = [] }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-      {/* Map container */}
       <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
-      {/* Stats overlay — top left */}
       {mapReady && (
         <div
           style={{
@@ -214,7 +212,6 @@ export default function MapView({ filters, reports = [] }) {
         </div>
       )}
 
-      {/* Locate me button */}
       {mapReady && (
         <button
           onClick={handleLocate}
@@ -241,15 +238,12 @@ export default function MapView({ filters, reports = [] }) {
         </button>
       )}
 
-      {/* Ward info card */}
       {selectedWard && (
         <WardCard ward={selectedWard} onClose={() => setSelectedWard(null)} reports={reports} />
       )}
     </div>
   );
 }
-
-// ─── Ward card ─────────────────────────────────────────────────────────────────
 
 function WardCard({ ward, onClose, reports }) {
   const wardReports = reports.filter((r) => r.ward_number === ward.wardNumber);
@@ -269,7 +263,6 @@ function WardCard({ ward, onClose, reports }) {
         overflow: 'hidden',
       }}
     >
-      {/* Ward header */}
       <div
         style={{
           background: '#1C1C1C',
@@ -328,7 +321,6 @@ function WardCard({ ward, onClose, reports }) {
         </button>
       </div>
 
-      {/* Card body */}
       <div style={{ padding: '14px 16px', display: 'flex', gap: '16px', alignItems: 'center' }}>
         <div style={{ flex: 1 }}>
           <div style={{ color: 'rgba(28,28,28,0.5)', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>
