@@ -4,30 +4,43 @@ import { useEffect, useRef, useState } from 'react';
 import { WARDS, CITY_CENTER } from '../data/wards';
 import { CATEGORIES } from '../data/categories';
 
-const MAPPLS_KEY = process.env.NEXT_PUBLIC_MAPPLS_KEY;
-
 // ─── SDK loader ────────────────────────────────────────────────────────────────
+// Fetches the key from a server-side API route (so it's read at request time,
+// not baked in at build time), then injects the Mappls SDK script.
 // Singleton promise — safe across React StrictMode double-invocations.
 let _sdkPromise = null;
 
 function loadMapplsSDK() {
   if (_sdkPromise) return _sdkPromise;
-  _sdkPromise = new Promise((resolve, reject) => {
+  _sdkPromise = (async () => {
     // Already loaded by a previous mount
-    if (window.mappls) { resolve(); return; }
+    if (window.mappls) return;
 
-    // Expose callback that the SDK script calls when ready
-    window.__mapplsSDKReady = () => resolve();
+    // ── Step 1: get the key from the server ──────────────────────────────────
+    const res = await fetch('/api/map-config');
+    const { key } = await res.json();
+    console.log('[Mappls] Key received — length:', key?.length ?? 0);
 
-    const script = document.createElement('script');
-    script.src = `https://apis.mappls.com/advancedmaps/api/${MAPPLS_KEY}/map_sdk?layer=vector&v=3.0&callback=__mapplsSDKReady`;
-    script.async = true;
-    script.onerror = (err) => {
-      _sdkPromise = null; // allow retry on next mount
-      reject(new Error('Mappls SDK failed to load. Check NEXT_PUBLIC_MAPPLS_KEY.'));
-    };
-    document.head.appendChild(script);
-  });
+    if (!key) {
+      _sdkPromise = null; // allow retry
+      throw new Error('[Mappls] No key returned from /api/map-config. Check NEXT_PUBLIC_MAPPLS_KEY in Vercel env vars.');
+    }
+
+    // ── Step 2: inject the SDK script and wait for the callback ─────────────
+    await new Promise((resolve, reject) => {
+      window.initMap = resolve; // Mappls calls this when ready
+
+      const script = document.createElement('script');
+      script.src = `https://apis.mappls.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=3.0&callback=initMap`;
+      script.async = true;
+      script.onload  = () => console.log('[Mappls] SDK script loaded');
+      script.onerror = (e) => {
+        _sdkPromise = null;
+        reject(new Error('[Mappls] SDK script failed to load — key may be invalid or network error.'));
+      };
+      document.head.appendChild(script);
+    });
+  })();
   return _sdkPromise;
 }
 
