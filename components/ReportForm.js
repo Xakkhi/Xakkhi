@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CATEGORIES, CATEGORY_LIST } from '../data/categories';
 import { isWithinDibrugarh, detectWard, compressPhoto, isLivePhoto } from '../lib/ward-detector';
+import { supabase } from '../lib/supabase';
 import LocationHelp from './LocationHelp';
 import QRCodeModal from './QRCodeModal';
 
@@ -98,10 +99,53 @@ export default function ReportForm() {
   async function handleSubmit() {
     if (!canSubmit) return;
     setSubmitting(true);
-    // Day 4: Supabase insert goes here
-    // For now, simulate a brief network delay and redirect to success
-    await new Promise((r) => setTimeout(r, 800));
-    router.push('/report-success');
+
+    try {
+      // Upload photo to Supabase Storage
+      let photoUrl = null;
+      if (photo) {
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('report-photos')
+          .upload(fileName, photo, { contentType: 'image/jpeg' });
+
+        if (uploadError) {
+          console.error('[Report] Photo upload failed:', uploadError);
+          // Continue without photo rather than blocking the report
+        } else {
+          const { data: urlData } = supabase.storage
+            .from('report-photos')
+            .getPublicUrl(uploadData.path);
+          photoUrl = urlData.publicUrl;
+        }
+      }
+
+      // Insert report into Supabase
+      const { error } = await supabase.from('reports').insert({
+        photo_url: photoUrl,
+        before_photo_url: photoUrl,
+        category,
+        sub_category: subCategory,
+        severity,
+        description: landmark.trim(),
+        lat: location.lat,
+        lng: location.lng,
+        ward_number: location.ward.wardNumber,
+      });
+
+      if (error) {
+        console.error('[Report] Insert failed:', error);
+        alert('Failed to submit report. Please try again.');
+        setSubmitting(false);
+        return;
+      }
+
+      router.push('/report-success');
+    } catch (err) {
+      console.error('[Report] Submit error:', err);
+      alert('Something went wrong. Please try again.');
+      setSubmitting(false);
+    }
   }
 
   const cat = category ? CATEGORIES[category] : null;

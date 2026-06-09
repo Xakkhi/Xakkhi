@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import FilterChips from '../components/FilterChips';
+import { supabase } from '../lib/supabase';
 
 const MapView = dynamic(() => import('../components/MapView'), { ssr: false });
 
@@ -14,15 +15,29 @@ export default function HomePage() {
     severity: null,
     status: null,
   });
+  const [reports, setReports] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 2500);
-    return () => clearTimeout(timer);
-  }, []);
+    async function fetchReports() {
+      try {
+        const { data, error } = await supabase
+          .from('reports')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-  // Reports will be fetched from Supabase on Day 4
-  const reports = [];
+        if (error) {
+          console.error('[Home] Fetch reports failed:', error);
+        } else {
+          setReports(data || []);
+        }
+      } catch (err) {
+        console.error('[Home] Fetch error:', err);
+      }
+      setIsLoading(false);
+    }
+    fetchReports();
+  }, []);
 
   return (
     <>

@@ -61,9 +61,10 @@ function dotSVG(color, size) {
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export default function MapView({ filters, reports = [] }) {
-  const mapRef         = useRef(null);
-  const mapInstanceRef = useRef(null);
-  const markersRef     = useRef([]);
+  const mapRef             = useRef(null);
+  const mapInstanceRef     = useRef(null);
+  const wardMarkersRef     = useRef([]);
+  const reportMarkersRef   = useRef([]);
   const [selectedWard, setSelectedWard] = useState(null);
   const [mapReady, setMapReady]         = useState(false);
 
@@ -85,13 +86,11 @@ export default function MapView({ filters, reports = [] }) {
 
         // Ward markers
         WARDS.forEach((ward) => {
-          const hasReports = reports.some((r) => r.ward_number === ward.wardNumber);
-
           const marker = new window.google.maps.Marker({
             map,
             position: { lat: ward.lat, lng: ward.lng },
             icon: {
-              url: wardSVG(ward.wardNumber, hasReports),
+              url: wardSVG(ward.wardNumber, false),
               scaledSize: new window.google.maps.Size(28, 28),
             },
           });
@@ -102,24 +101,7 @@ export default function MapView({ filters, reports = [] }) {
             map.setCenter({ lat: ward.lat, lng: ward.lng });
           });
 
-          markersRef.current.push(marker);
-        });
-
-        // Report markers
-        reports.forEach((report) => {
-          const cat = CATEGORIES[report.category];
-          if (!cat || !report.lat || !report.lng) return;
-          const sizeMap = { minor: 10, moderate: 14, severe: 18, critical: 22 };
-          const size = sizeMap[report.severity] || 14;
-
-          new window.google.maps.Marker({
-            map,
-            position: { lat: report.lat, lng: report.lng },
-            icon: {
-              url: dotSVG(cat.color, size),
-              scaledSize: new window.google.maps.Size(size, size),
-            },
-          });
+          wardMarkersRef.current.push(marker);
         });
 
         mapInstanceRef.current = map;
@@ -135,12 +117,53 @@ export default function MapView({ filters, reports = [] }) {
     return () => {
       cancelled = true;
       if (mapInstanceRef.current) {
-        markersRef.current.forEach((m) => m.setMap(null));
+        wardMarkersRef.current.forEach((m) => m.setMap(null));
+        reportMarkersRef.current.forEach((m) => m.setMap(null));
         mapInstanceRef.current = null;
       }
-      markersRef.current = [];
+      wardMarkersRef.current = [];
+      reportMarkersRef.current = [];
     };
   }, []);
+
+  // Re-draw report markers whenever reports data changes
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    // Clear old report markers
+    reportMarkersRef.current.forEach((m) => m.setMap(null));
+    reportMarkersRef.current = [];
+
+    // Update ward marker icons (saffron if has reports)
+    wardMarkersRef.current.forEach((marker, i) => {
+      const ward = WARDS[i];
+      if (!ward) return;
+      const hasReports = reports.some((r) => r.ward_number === ward.wardNumber);
+      marker.setIcon({
+        url: wardSVG(ward.wardNumber, hasReports),
+        scaledSize: new window.google.maps.Size(28, 28),
+      });
+    });
+
+    // Add report dot markers
+    reports.forEach((report) => {
+      const cat = CATEGORIES[report.category];
+      if (!cat || !report.lat || !report.lng) return;
+      const sizeMap = { minor: 10, moderate: 14, severe: 18, critical: 22 };
+      const size = sizeMap[report.severity] || 14;
+
+      const marker = new window.google.maps.Marker({
+        map,
+        position: { lat: report.lat, lng: report.lng },
+        icon: {
+          url: dotSVG(cat.color, size),
+          scaledSize: new window.google.maps.Size(size, size),
+        },
+      });
+      reportMarkersRef.current.push(marker);
+    });
+  }, [reports, mapReady]);
 
   function handleLocate() {
     if (!mapInstanceRef.current) return;
