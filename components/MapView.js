@@ -25,7 +25,7 @@ function loadGoogleMapsSDK() {
     window.__googleMapsReady = resolve;
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker&callback=__googleMapsReady&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=__googleMapsReady&loading=async`;
     script.async = true;
     script.onerror = () => {
       _sdkPromise = null;
@@ -80,26 +80,20 @@ export default function MapView({ filters, reports = [] }) {
           center: { lat: CITY_CENTER[0], lng: CITY_CENTER[1] },
           zoom: 15,
           mapTypeId: 'roadmap',
-          mapId: 'xakkhi_map',
           disableDefaultUI: true,
         });
-
-        const { AdvancedMarkerElement } = await window.google.maps.importLibrary('marker');
 
         // Ward markers
         WARDS.forEach((ward) => {
           const hasReports = reports.some((r) => r.ward_number === ward.wardNumber);
 
-          const img = document.createElement('img');
-          img.src = wardSVG(ward.wardNumber, hasReports);
-          img.width = 28;
-          img.height = 28;
-
-          const marker = new AdvancedMarkerElement({
+          const marker = new window.google.maps.Marker({
             map,
             position: { lat: ward.lat, lng: ward.lng },
-            content: img,
-            title: `Ward ${ward.wardNumber}`,
+            icon: {
+              url: wardSVG(ward.wardNumber, hasReports),
+              scaledSize: new window.google.maps.Size(28, 28),
+            },
           });
 
           marker.addListener('click', () => {
@@ -118,15 +112,13 @@ export default function MapView({ filters, reports = [] }) {
           const sizeMap = { minor: 10, moderate: 14, severe: 18, critical: 22 };
           const size = sizeMap[report.severity] || 14;
 
-          const img = document.createElement('img');
-          img.src = dotSVG(cat.color, size);
-          img.width = size;
-          img.height = size;
-
-          new AdvancedMarkerElement({
+          new window.google.maps.Marker({
             map,
             position: { lat: report.lat, lng: report.lng },
-            content: img,
+            icon: {
+              url: dotSVG(cat.color, size),
+              scaledSize: new window.google.maps.Size(size, size),
+            },
           });
         });
 
@@ -143,7 +135,7 @@ export default function MapView({ filters, reports = [] }) {
     return () => {
       cancelled = true;
       if (mapInstanceRef.current) {
-        markersRef.current.forEach((m) => { m.map = null; });
+        markersRef.current.forEach((m) => m.setMap(null));
         mapInstanceRef.current = null;
       }
       markersRef.current = [];
