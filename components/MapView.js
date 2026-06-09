@@ -5,48 +5,34 @@ import { WARDS, CITY_CENTER } from '../data/wards';
 import { CATEGORIES } from '../data/categories';
 
 // ─── SDK loader ────────────────────────────────────────────────────────────────
-// Fetches the key from a server-side API route (so it's read at request time,
-// not baked in at build time), then injects the Mappls SDK script.
-// Singleton promise — safe across React StrictMode double-invocations.
 let _sdkPromise = null;
 
-function loadMapplsSDK() {
+function loadGoogleMapsSDK() {
   if (_sdkPromise) return _sdkPromise;
-  _sdkPromise = (async () => {
-    if (window.mappls) return;
+  _sdkPromise = new Promise((resolve, reject) => {
+    if (window.google?.maps) { resolve(); return; }
 
-    // ── Step 1: get key from server ──────────────────────────────────────────
-    const res = await fetch('/api/map-config');
-    const { key } = await res.json();
-    console.log('[Mappls] Key received — length:', key?.length ?? 0);
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+    console.log('Maps key length:', apiKey?.length);
+    console.log('Maps key start:', apiKey?.substring(0, 4));
 
-    if (!key) {
+    if (!apiKey) {
       _sdkPromise = null;
-      throw new Error('[Mappls] No key returned from /api/map-config. Check NEXT_PUBLIC_MAPPLS_KEY in Vercel env vars.');
+      reject(new Error('[MapView] NEXT_PUBLIC_GOOGLE_MAPS_KEY is not set.'));
+      return;
     }
 
-    // ── Step 2: trim + debug ─────────────────────────────────────────────────
-    const cleanKey = key.trim();
-    console.log('[Mappls] Key trimmed length:', cleanKey.length);
-    console.log('[Mappls] Key first 4 chars:', cleanKey.substring(0, 4));
-    console.log('[Mappls] Key last 4 chars:', cleanKey.substring(cleanKey.length - 4));
-    console.log('[Mappls] Full SDK URL:', `https://apis.mappls.com/advancedmaps/v1/${cleanKey}/map_sdk?layer=vector&v=3.0`);
+    window.__googleMapsReady = resolve;
 
-    // ── Step 3: inject SDK script and wait for callback ──────────────────────
-    await new Promise((resolve, reject) => {
-      window.initMap = resolve;
-
-      const script = document.createElement('script');
-      script.src = `https://apis.mappls.com/advancedmaps/v1/${cleanKey}/map_sdk?layer=vector&v=3.0&libraries=&callback=initMap`;
-      script.async = true;
-      script.onload  = () => console.log('[Mappls] SDK script onload fired');
-      script.onerror = () => {
-        _sdkPromise = null;
-        reject(new Error('[Mappls] SDK script failed to load — key may be invalid or domain not whitelisted.'));
-      };
-      document.head.appendChild(script);
-    });
-  })();
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=__googleMapsReady&loading=async`;
+    script.async = true;
+    script.onerror = () => {
+      _sdkPromise = null;
+      reject(new Error('[MapView] Google Maps script failed to load — check NEXT_PUBLIC_GOOGLE_MAPS_KEY.'));
+    };
+    document.head.appendChild(script);
+  });
   return _sdkPromise;
 }
 
@@ -87,62 +73,60 @@ export default function MapView({ filters, reports = [] }) {
 
     async function initMap() {
       try {
-        await loadMapplsSDK();
+        await loadGoogleMapsSDK();
         if (cancelled || mapInstanceRef.current) return;
 
-        const map = new window.mappls.Map(mapRef.current, {
-          center: CITY_CENTER,  // [lat, lng]
-          zoom: 14,
-          zoomControl: false,
+        const map = new window.google.maps.Map(mapRef.current, {
+          center: { lat: CITY_CENTER[0], lng: CITY_CENTER[1] },
+          zoom: 15,
+          mapTypeId: 'roadmap',
+          disableDefaultUI: true,
         });
 
-        function onReady() {
-          if (cancelled) return;
+        // Ward markers
+        WARDS.forEach((ward) => {
+          const hasReports = reports.some((r) => r.ward_number === ward.wardNumber);
 
-          // Ward markers
-          WARDS.forEach((ward) => {
-            const hasReports = reports.some((r) => r.ward_number === ward.wardNumber);
-
-            const marker = new window.mappls.Marker({
-              map,
-              position: { lat: ward.lat, lng: ward.lng },
-              icon: wardSVG(ward.wardNumber, hasReports),
-            });
-
-            window.mappls.addListener(marker, 'click', () => {
-              setSelectedWard(ward);
-              map.setCenter({ lat: ward.lat, lng: ward.lng });
-            });
-
-            markersRef.current.push(marker);
+          const marker = new window.google.maps.Marker({
+            map,
+            position: { lat: ward.lat, lng: ward.lng },
+            icon: {
+              url: wardSVG(ward.wardNumber, hasReports),
+              scaledSize: new window.google.maps.Size(28, 28),
+            },
           });
 
-          // Report markers
-          reports.forEach((report) => {
-            const cat = CATEGORIES[report.category];
-            if (!cat || !report.lat || !report.lng) return;
-            const sizeMap = { minor: 10, moderate: 14, severe: 18, critical: 22 };
-            const size = sizeMap[report.severity] || 14;
-
-            new window.mappls.Marker({
-              map,
-              position: { lat: report.lat, lng: report.lng },
-              icon: dotSVG(cat.color, size),
-            });
+          marker.addListener('click', () => {
+            if (cancelled) return;
+            setSelectedWard(ward);
+            map.setCenter({ lat: ward.lat, lng: ward.lng });
           });
 
-          mapInstanceRef.current = map;
-          if (!cancelled) setMapReady(true);
-        }
+          markersRef.current.push(marker);
+        });
 
-        if (typeof map.loaded === 'function' && map.loaded()) {
-          onReady();
-        } else {
-          map.on('load', onReady);
-        }
+        // Report markers
+        reports.forEach((report) => {
+          const cat = CATEGORIES[report.category];
+          if (!cat || !report.lat || !report.lng) return;
+          const sizeMap = { minor: 10, moderate: 14, severe: 18, critical: 22 };
+          const size = sizeMap[report.severity] || 14;
+
+          new window.google.maps.Marker({
+            map,
+            position: { lat: report.lat, lng: report.lng },
+            icon: {
+              url: dotSVG(cat.color, size),
+              scaledSize: new window.google.maps.Size(size, size),
+            },
+          });
+        });
+
+        mapInstanceRef.current = map;
+        if (!cancelled) setMapReady(true);
 
       } catch (err) {
-        console.error('[MapView] Mappls init failed:', err);
+        console.error('[MapView] Google Maps init failed:', err);
       }
     }
 
@@ -151,7 +135,7 @@ export default function MapView({ filters, reports = [] }) {
     return () => {
       cancelled = true;
       if (mapInstanceRef.current) {
-        try { mapInstanceRef.current.remove(); } catch (_) { /* ignore */ }
+        markersRef.current.forEach((m) => m.setMap(null));
         mapInstanceRef.current = null;
       }
       markersRef.current = [];
