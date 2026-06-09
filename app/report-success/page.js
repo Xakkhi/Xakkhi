@@ -56,8 +56,7 @@ export default function ReportSuccessPage() {
       </h1>
 
       <p style={{ color: 'rgba(28,28,28,0.55)', fontSize: '15px', margin: '0 0 24px', lineHeight: 1.5 }}>
-        Your civic report has been submitted anonymously. The ward commissioner
-        and DMC have been notified.
+        Your civic report has been submitted anonymously.
       </p>
 
       {/* Report ID */}
@@ -107,9 +106,8 @@ export default function ReportSuccessPage() {
         </div>
         {[
           { icon: '📋', text: 'Report visible on map immediately' },
-          { icon: '👥', text: 'Ward commissioner notified' },
-          { icon: '🏛️', text: 'DMC accountability chain activated' },
-          { icon: '✅', text: 'Citizens can verify when resolved' },
+          { icon: '👁️', text: 'Citizens can see and upvote your report' },
+          { icon: '✅', text: 'Anyone can verify when it gets resolved' },
         ].map(({ icon, text }) => (
           <div
             key={text}
