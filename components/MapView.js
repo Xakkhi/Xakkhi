@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { WARDS, CITY_CENTER } from '../data/wards';
 import { CATEGORIES } from '../data/categories';
+import { WARD_BOUNDARIES } from '../data/wardBoundaries';
 
 // ─── SDK loader ────────────────────────────────────────────────────────────────
 let _sdkPromise = null;
@@ -38,17 +39,6 @@ function loadGoogleMapsSDK() {
 
 // ─── Icon helpers ──────────────────────────────────────────────────────────────
 
-function wardSVG(wardNumber, hasReports) {
-  const fill = hasReports ? '#F77F00' : '#1C1C1C';
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28">` +
-    `<circle cx="14" cy="14" r="12" fill="${fill}" stroke="white" stroke-width="2"/>` +
-    `<text x="14" y="14" text-anchor="middle" dominant-baseline="central" ` +
-    `fill="white" font-size="10" font-weight="700" font-family="DM Sans,sans-serif">${wardNumber}</text>` +
-    `</svg>`;
-  return 'data:image/svg+xml;base64,' + btoa(svg);
-}
-
 function dotSVG(color, size) {
   const r = Math.max(size / 2 - 2, 2);
   const svg =
@@ -58,13 +48,46 @@ function dotSVG(color, size) {
   return 'data:image/svg+xml;base64,' + btoa(svg);
 }
 
+// ─── Map styles (clean, minimal — matches NammaKasa aesthetic) ─────────────────
+
+const MAP_STYLES = [
+  // Hide all POIs (businesses, attractions, government icons)
+  { featureType: 'poi', elementType: 'all', stylers: [{ visibility: 'off' }] },
+  // Show parks/green areas but muted
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ visibility: 'on' }, { color: '#e8f0e4' }] },
+  { featureType: 'poi.park', elementType: 'labels', stylers: [{ visibility: 'on' }] },
+  // Hide transit (bus stops, train stations)
+  { featureType: 'transit', elementType: 'all', stylers: [{ visibility: 'off' }] },
+  // Mute road colors
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#e0e0e0' }] },
+  // Keep road labels visible
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#7a7a7a' }] },
+  // Highway slightly darker
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#f0f0f0' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#d0d0d0' }] },
+  // Mute land/background
+  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f5f2ed' }] },
+  // Water — soft blue
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#d4e6f1' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#7fa8c9' }] },
+  // Admin boundaries (ward/city) — subtle
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#c0c0c0' }, { weight: 1 }] },
+  { featureType: 'administrative', elementType: 'labels.text.fill', stylers: [{ color: '#6b6b6b' }] },
+  // Locality/neighborhood labels — darker for readability
+  { featureType: 'administrative.neighborhood', elementType: 'labels.text.fill', stylers: [{ color: '#555555' }] },
+  // Hide building footprints
+  { featureType: 'landscape.man_made', elementType: 'geometry', stylers: [{ visibility: 'off' }] },
+];
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export default function MapView({ filters, reports = [] }) {
   const mapRef             = useRef(null);
   const mapInstanceRef     = useRef(null);
-  const wardMarkersRef     = useRef([]);
   const reportMarkersRef   = useRef([]);
+  const wardPolygonsRef    = useRef([]);
+  const highlightPolyRef   = useRef(null);
   const [selectedWard, setSelectedWard] = useState(null);
   const [mapReady, setMapReady]         = useState(false);
 
@@ -82,26 +105,7 @@ export default function MapView({ filters, reports = [] }) {
           zoom: 15,
           mapTypeId: 'roadmap',
           disableDefaultUI: true,
-        });
-
-        // Ward markers
-        WARDS.forEach((ward) => {
-          const marker = new window.google.maps.Marker({
-            map,
-            position: { lat: ward.lat, lng: ward.lng },
-            icon: {
-              url: wardSVG(ward.wardNumber, false),
-              scaledSize: new window.google.maps.Size(28, 28),
-            },
-          });
-
-          marker.addListener('click', () => {
-            if (cancelled) return;
-            setSelectedWard(ward);
-            map.setCenter({ lat: ward.lat, lng: ward.lng });
-          });
-
-          wardMarkersRef.current.push(marker);
+          styles: MAP_STYLES,
         });
 
         mapInstanceRef.current = map;
@@ -117,11 +121,11 @@ export default function MapView({ filters, reports = [] }) {
     return () => {
       cancelled = true;
       if (mapInstanceRef.current) {
-        wardMarkersRef.current.forEach((m) => m.setMap(null));
         reportMarkersRef.current.forEach((m) => m.setMap(null));
+        wardPolygonsRef.current.forEach((p) => p.setMap(null));
+        if (highlightPolyRef.current) highlightPolyRef.current.setMap(null);
         mapInstanceRef.current = null;
       }
-      wardMarkersRef.current = [];
       reportMarkersRef.current = [];
     };
   }, []);
@@ -135,31 +139,81 @@ export default function MapView({ filters, reports = [] }) {
     reportMarkersRef.current.forEach((m) => m.setMap(null));
     reportMarkersRef.current = [];
 
-    // Update ward marker icons (saffron if has reports)
-    wardMarkersRef.current.forEach((marker, i) => {
-      const ward = WARDS[i];
-      if (!ward) return;
-      const hasReports = reports.some((r) => r.ward_number === ward.wardNumber);
-      marker.setIcon({
-        url: wardSVG(ward.wardNumber, hasReports),
-        scaledSize: new window.google.maps.Size(28, 28),
-      });
+    // Clear old ward polygons
+    wardPolygonsRef.current.forEach((p) => p.setMap(null));
+    wardPolygonsRef.current = [];
+
+    // Count unresolved reports per ward for heat overlay
+    const unresolvedByWard = {};
+    reports.forEach((r) => {
+      if (r.status !== 'resolved' && r.ward_number) {
+        unresolvedByWard[r.ward_number] = (unresolvedByWard[r.ward_number] || 0) + 1;
+      }
     });
 
-    // Add report dot markers
+    const maxCount = Math.max(1, ...Object.values(unresolvedByWard));
+
+    // Draw ward boundary polygons with heat coloring
+    Object.entries(WARD_BOUNDARIES).forEach(([wardNum, coords]) => {
+      const count = unresolvedByWard[Number(wardNum)] || 0;
+      const intensity = count / maxCount;
+
+      // cream → pink → red gradient based on report density
+      const r = 220 + Math.round(35 * intensity);
+      const g = Math.round(200 * (1 - intensity));
+      const b = Math.round(180 * (1 - intensity));
+      const fillColor = count > 0 ? `rgb(${r},${g},${b})` : '#f5f2ed';
+      const fillOpacity = count > 0 ? 0.08 + 0.17 * intensity : 0.03;
+
+      const poly = new window.google.maps.Polygon({
+        paths: coords.map(([lat, lng]) => ({ lat, lng })),
+        strokeColor: fillColor,
+        strokeOpacity: fillOpacity + 0.05,
+        strokeWeight: 1,
+        fillColor,
+        fillOpacity,
+        map,
+        zIndex: 1,
+      });
+
+      poly.addListener('click', () => {
+        const ward = WARDS.find((w) => w.wardNumber === Number(wardNum));
+        if (ward) {
+          setSelectedWard(ward);
+          // Highlight this ward boundary
+          if (highlightPolyRef.current) highlightPolyRef.current.setMap(null);
+          highlightPolyRef.current = new window.google.maps.Polygon({
+            paths: coords.map(([lat, lng]) => ({ lat, lng })),
+            strokeColor: '#DC2626',
+            strokeOpacity: 0.9,
+            strokeWeight: 3,
+            fillColor: '#DC2626',
+            fillOpacity: 0.08,
+            map,
+            zIndex: 5,
+          });
+        }
+      });
+
+      wardPolygonsRef.current.push(poly);
+    });
+
+    // Add report dot markers with severity-based colors
+    const sevColors = { minor: '#D97706', moderate: '#F77F00', severe: '#DC2626', critical: '#7F1D1D' };
     reports.forEach((report) => {
-      const cat = CATEGORIES[report.category];
-      if (!cat || !report.lat || !report.lng) return;
+      if (!report.lat || !report.lng) return;
       const sizeMap = { minor: 10, moderate: 14, severe: 18, critical: 22 };
       const size = sizeMap[report.severity] || 14;
+      const color = report.status === 'resolved' ? '#16A34A' : (sevColors[report.severity] || '#F77F00');
 
       const marker = new window.google.maps.Marker({
         map,
         position: { lat: report.lat, lng: report.lng },
         icon: {
-          url: dotSVG(cat.color, size),
+          url: dotSVG(color, size),
           scaledSize: new window.google.maps.Size(size, size),
         },
+        zIndex: report.severity === 'critical' ? 10 : report.severity === 'severe' ? 8 : 5,
       });
       reportMarkersRef.current.push(marker);
     });
@@ -246,7 +300,7 @@ export default function MapView({ filters, reports = [] }) {
       )}
 
       {selectedWard && (
-        <WardCard ward={selectedWard} onClose={() => setSelectedWard(null)} reports={reports} />
+        <WardCard ward={selectedWard} onClose={() => { setSelectedWard(null); if (highlightPolyRef.current) { highlightPolyRef.current.setMap(null); highlightPolyRef.current = null; } }} reports={reports} />
       )}
     </div>
   );
@@ -254,141 +308,47 @@ export default function MapView({ filters, reports = [] }) {
 
 function WardCard({ ward, onClose, reports }) {
   const wardReports = reports.filter((r) => r.ward_number === ward.wardNumber);
-  const isVacant    = ward.commissionerPosition === 'Vacant';
+  const unresolvedCount = wardReports.filter((r) => r.status !== 'resolved').length;
 
   return (
     <div
+      onClick={onClose}
       style={{
         position: 'absolute',
-        bottom: '16px',
+        bottom: '80px',
         left: '12px',
-        right: '12px',
         background: 'white',
-        borderRadius: '16px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+        borderRadius: '12px',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
         zIndex: 20,
-        overflow: 'hidden',
+        padding: '10px 14px',
+        maxWidth: '200px',
+        cursor: 'pointer',
       }}
     >
-      <div
-        style={{
-          background: '#1C1C1C',
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span
-              style={{
-                background: '#FFE4CC',
-                color: '#F77F00',
-                fontSize: '11px',
-                fontWeight: '700',
-                padding: '2px 8px',
-                borderRadius: '20px',
-              }}
-            >
-              Ward {ward.wardNumber}
-            </span>
-            <span style={{ color: 'white', fontWeight: '700', fontSize: '15px' }}>
-              {ward.areaName}
-            </span>
-          </div>
-          <div
-            style={{
-              color: 'rgba(255,255,255,0.5)',
-              fontSize: '12px',
-              marginTop: '2px',
-              fontFamily: 'Noto Sans Bengali, sans-serif',
-            }}
-          >
-            {ward.areaNameLocal}
-          </div>
-        </div>
-        <button
-          onClick={onClose}
-          style={{
-            background: 'rgba(255,255,255,0.1)',
-            border: 'none',
-            color: 'white',
-            width: '28px',
-            height: '28px',
-            borderRadius: '50%',
-            cursor: 'pointer',
-            fontSize: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          ×
-        </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+        <span style={{
+          background: '#FFE4CC', color: '#F77F00', fontSize: '10px', fontWeight: '700',
+          padding: '1px 6px', borderRadius: '10px',
+        }}>
+          {ward.wardNumber}
+        </span>
+        <span style={{ fontWeight: '700', fontSize: '13px', color: '#1C1C1C' }}>
+          {ward.areaName}
+        </span>
       </div>
-
-      <div style={{ padding: '14px 16px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ color: 'rgba(28,28,28,0.5)', fontSize: '11px', fontWeight: '600', marginBottom: '4px' }}>
-            WARD COMMISSIONER
-          </div>
-          {isVacant ? (
-            <div style={{ color: '#DC2626', fontWeight: '700', fontSize: '14px' }}>Vacant</div>
-          ) : (
-            <>
-              <div style={{ fontWeight: '700', fontSize: '15px', color: '#1C1C1C' }}>
-                {ward.commissionerName}
-              </div>
-              <div style={{ color: 'rgba(28,28,28,0.5)', fontSize: '12px' }}>
-                {ward.commissionerPosition}
-              </div>
-              {ward.commissionerPhone && (
-                <a
-                  href={`tel:${ward.commissionerPhone}`}
-                  style={{
-                    display: 'inline-block',
-                    marginTop: '6px',
-                    padding: '4px 12px',
-                    background: '#F77F00',
-                    color: 'white',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    textDecoration: 'none',
-                  }}
-                >
-                  📞 Call
-                </a>
-              )}
-            </>
-          )}
-        </div>
-
-        <div
-          style={{
-            textAlign: 'center',
-            background: wardReports.length > 0 ? '#FFF0F0' : '#F5F5F5',
-            borderRadius: '12px',
-            padding: '10px 16px',
-            minWidth: '80px',
-          }}
-        >
-          <div
-            style={{
-              fontSize: '28px',
-              fontWeight: '800',
-              color: wardReports.length > 0 ? '#DC2626' : 'rgba(28,28,28,0.3)',
-              lineHeight: 1,
-            }}
-          >
-            {wardReports.length}
-          </div>
-          <div style={{ fontSize: '11px', fontWeight: '600', color: 'rgba(28,28,28,0.5)', marginTop: '2px' }}>
-            Reports
-          </div>
-        </div>
+      <div style={{ fontSize: '11px', color: 'rgba(28,28,28,0.5)', marginBottom: '6px', fontFamily: 'Noto Sans Bengali, sans-serif' }}>
+        {ward.areaNameLocal}
       </div>
+      <div style={{ display: 'flex', gap: '10px', fontSize: '11px', fontWeight: '600' }}>
+        <span style={{ color: '#DC2626' }}>{unresolvedCount} active</span>
+        <span style={{ color: 'rgba(28,28,28,0.35)' }}>{wardReports.length} total</span>
+      </div>
+      {ward.commissionerName && (
+        <div style={{ fontSize: '11px', color: 'rgba(28,28,28,0.5)', marginTop: '4px', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '4px' }}>
+          {ward.commissionerName}
+        </div>
+      )}
     </div>
   );
 }
