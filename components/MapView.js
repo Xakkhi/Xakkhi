@@ -215,6 +215,9 @@ export default function MapView({ filters, reports = [] }) {
         },
         zIndex: report.severity === 'critical' ? 10 : report.severity === 'severe' ? 8 : 5,
       });
+      marker.addListener('click', () => {
+        window.location.href = `/report/${report.id}`;
+      });
       reportMarkersRef.current.push(marker);
     });
   }, [reports, mapReady]);

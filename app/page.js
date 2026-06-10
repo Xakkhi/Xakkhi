@@ -1,7 +1,7 @@
 'use client';
 
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import FilterChips from '../components/FilterChips';
@@ -29,7 +29,7 @@ export default function HomePage() {
         if (error) {
           console.error('[Home] Fetch reports failed:', error);
         } else {
-          setReports(data || []);
+          setReports((data || []).filter((r) => r.flag_status !== 'approved'));
         }
       } catch (err) {
         console.error('[Home] Fetch error:', err);
@@ -38,6 +38,15 @@ export default function HomePage() {
     }
     fetchReports();
   }, []);
+
+  const filtered = useMemo(() => {
+    return reports.filter((r) => {
+      if (filters.category && r.category !== filters.category) return false;
+      if (filters.severity && r.severity !== filters.severity) return false;
+      if (filters.status && r.status !== filters.status) return false;
+      return true;
+    });
+  }, [reports, filters]);
 
   return (
     <>
@@ -100,7 +109,7 @@ export default function HomePage() {
 
       {/* Map fills remaining space */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0 }}>
-        <MapView filters={filters} reports={reports} />
+        <MapView filters={filters} reports={filtered} />
 
         {/* Bottom CTA — z-index 1 is above MapView root (z-index 0) */}
         <div
@@ -159,7 +168,7 @@ export default function HomePage() {
           >
             <span style={{ fontSize: '20px' }}>📊</span>
             <span style={{ fontSize: '9px', fontWeight: '700', opacity: 0.7, marginTop: '1px' }}>
-              {reports.length}
+              {filtered.length}
             </span>
           </Link>
         </div>
