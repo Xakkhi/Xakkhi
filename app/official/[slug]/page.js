@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 import { WARDS } from '../../../data/wards';
-import { CITY_OFFICIALS } from '../../../data/officials';
+import { CITY_OFFICIALS, SHOW_OFFICIAL_CONTACT } from '../../../data/officials';
 import { CATEGORIES } from '../../../data/categories';
 
 export default function OfficialDetailPage() {
@@ -120,9 +120,9 @@ export default function OfficialDetailPage() {
             {person.body}
           </div>
 
-          {/* Action buttons */}
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '14px' }}>
-            {person.phone && (
+          {/* Action buttons — hidden pending verification of public contact numbers */}
+          {SHOW_OFFICIAL_CONTACT && person.phone && (
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '14px' }}>
               <a href={`tel:${person.phone}`} style={{
                 padding: '8px 20px', background: '#F77F00', color: 'white',
                 borderRadius: '20px', fontSize: '13px', fontWeight: '700',
@@ -130,8 +130,6 @@ export default function OfficialDetailPage() {
               }}>
                 Call
               </a>
-            )}
-            {person.phone && (
               <a href={`https://wa.me/91${person.phone}`} target="_blank" rel="noopener noreferrer" style={{
                 padding: '8px 20px', background: '#25D366', color: 'white',
                 borderRadius: '20px', fontSize: '13px', fontWeight: '700',
@@ -139,8 +137,8 @@ export default function OfficialDetailPage() {
               }}>
                 WhatsApp
               </a>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Stats card */}

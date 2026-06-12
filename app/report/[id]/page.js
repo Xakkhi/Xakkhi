@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 import { WARDS } from '../../../data/wards';
 import { CATEGORIES, SEVERITY_COLORS } from '../../../data/categories';
+import { SHOW_OFFICIAL_CONTACT } from '../../../data/officials';
 import AccountabilityTree from '../../../components/AccountabilityTree';
 import ActionSheet from '../../../components/ActionSheet';
 
@@ -261,7 +262,7 @@ export default function ReportDetailPage() {
                 {ward?.commissionerName || 'Vacant'} · {ward?.commissionerPosition || ''}
               </div>
             </div>
-            {ward?.commissionerPhone && (
+            {SHOW_OFFICIAL_CONTACT && ward?.commissionerPhone && (
               <span
                 role="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `tel:${ward.commissionerPhone}`; }}
@@ -293,9 +294,8 @@ export default function ReportDetailPage() {
         {/* File a complaint */}
         <button
           onClick={() => {
-            const phone = ward?.commissionerPhone;
-            if (phone) window.location.href = `tel:${phone}`;
-            else window.location.href = `/official/ward-${report.ward_number}`;
+            // Route to the ward's accountability page, not a personal mobile.
+            window.location.href = `/official/ward-${report.ward_number}`;
           }}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',

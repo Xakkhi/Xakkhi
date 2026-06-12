@@ -58,49 +58,83 @@ Last updated: 2026-06-11.
 - [x] **Report detail page** — badges, photo, "I've seen this", stats trio, ward info, directions, share
 - [x] **Redesigned accountability tree** (NammaKasa-style): Your Ward pill → DMC Sanitation + Ward Commissioner branch → executive officer chain (COMM→AC→EE→JE→SI) → Elected Board → MLA/MP/Commissioner photo cards
 - [x] **BEFORE/AFTER** photos + resolution banner for resolved reports
-- [x] **Trust footer** ("Reported Xd ago · N citizens", "All reports anonymous") + **File a complaint**
+- [x] **Trust footer** + **File a complaint**
 - [x] **Action bottom sheets** — "Mark as Cleaned" / "This isn't right" → camera → Supabase Storage upload → `pending_review` (verified live end-to-end)
-- [x] **Review queue** (`/review`) — approve/reject cleanups & flags; approve cleanup → resolved + after-photo; approve flag → removed from public
-- [x] **Leaderboard** (`/leaderboard`) — city stats, ward rankings, sort modes (Worst/Best/Most)
-- [x] **Official profile pages** (`/official/[slug]`) — ward commissioners + city officials, stats, top issues, recent reports
-- [x] **About page** (`/about`) — mission, live stats, how-it-works, categories, accountability, CTA
+- [x] **Review queue** (`/review`) — approve/reject cleanups & flags
+- [x] **Leaderboard** (`/leaderboard`) — city stats, ward rankings, sort modes
+- [x] **Official profile pages** (`/official/[slug]`)
+- [x] **About page** (`/about`) — mission, live stats, how-it-works, accountability
 - [x] Map: **tap report dot → detail**, **wired filter chips**, exclude flag-approved reports
 - [x] Bottom nav: **About → "More" popup** (About + Review Queue)
 - [x] Header: **auto-flipping brand-colored social icon** (IG/X/Telegram), removed dead `⋯` menu
 - [x] Supabase: cleanup/flag columns, `report-photos` bucket, anon update + storage policies
-- [x] **Cluster demo** (`/cluster-demo`) — severity-aware MarkerClusterer sample (standalone, parked for decision)
+- [x] **Cluster demo** (`/cluster-demo`) — severity-aware MarkerClusterer sample (standalone, parked)
 
 ---
 
-## ⏳ PENDING / REMAINING
+## 🚀 LAUNCH ROADMAP (pending — ordered by dependency)
 
-### 🔴 Pre-launch BLOCKERS
-- [ ] Replace wide-open `anon update reports` RLS policy (column-scoped or insert-only `report_actions` table)
-- [ ] Add **admin auth** to `/review` and lock the route
-- [ ] Re-audit `report-photos` storage policies (open insert/read/delete)
-- [ ] **Delete test seed data** before production
+### Phase A — Real-time data layer *(foundational, start here)*
+- [ ] `ReportsProvider` context = single source of truth + `useReports()` hook
+- [ ] Enable Supabase Realtime on `reports` (`alter publication supabase_realtime add table reports;`)
+- [ ] One Realtime channel: subscribe to INSERT / UPDATE / DELETE, merge into shared state
+- [ ] Refactor Map / List / Leaderboard / Official / About / Review to consume context (drop per-page fetches)
+- [ ] Optimistic insert on submit + reconnect-refetch guard
 
-### 🗺️ Map enhancements
-- [ ] Decide on & adopt **MarkerClusterer** (demo built; choose heat-overlay coexistence)
+### Phase B — Security hardening *(LAUNCH BLOCKERS)*
+- [ ] RLS lockdown: anon **insert-only** on reports; move cleanup/flag to insert-only `report_actions` table
+- [ ] **Admin auth** on `/review` (Supabase Auth)
+- [ ] Storage policy audit (scoped paths, file type/size limits)
+- [ ] Anti-spam / rate limiting on submissions (per-device throttle)
+
+### Phase C — Data integrity & moderation
+- [ ] **Delete test seed data**
+- [ ] Citizen-count / duplicate-report aggregation (nearby same-category → bump `citizen_count`)
+- [ ] Admin notification when items hit the review queue
+
+### Phase D — Launch infrastructure
+- [ ] ⭐ **PRIORITY — Register + connect domain `xakkhi.in`** (registrar purchase → Vercel DNS → auto-SSL → www/apex redirect)
+- [ ] **Google Maps API key restriction** (HTTP referrer lock to domain) — security **and** cost control
+- [ ] Production env vars separated from preview
+- [ ] Supabase production readiness (tier, backups, connection pooling)
+- [ ] Error monitoring (Sentry/Vercel) + uptime
+- [ ] Secure matching social handles (`@xakkhi` IG/X/Telegram) + wire real links in `Header.js`
+
+### Phase E — Analytics & metrics
+- [ ] Baseline web analytics — **Vercel Web Analytics** (pageviews, referrers, geo, devices; cookieless)
+- [ ] Product event tracking — **PostHog** (or similar) via a small `track(event, props)` helper
+- [ ] Event taxonomy:
+  - views: map / list / leaderboard / report-detail / official / about
+  - map: map_load, ward_tap, dot_tap, cluster_tap, locate_me, zoom
+  - report funnel: report_started → photo_added → location_captured → category_selected → report_submitted → report_success
+  - engagement: seen_this, share, get_directions, call_official, file_complaint
+  - filters: filter_applied (category/severity/status)
+  - social: social_icon_click, social_link_opened
+  - moderation: cleanup_submitted, flag_submitted, review_approved/rejected
+- [ ] **Impact dashboard** (`/stats` or `/admin`, behind admin auth): reports/day, resolution rate, avg time-to-resolve, ward leaderboard, category mix, verification & flag rates, new vs returning
+- [ ] Privacy-respecting config: no PII, IP/city-level geo only, cookieless (no consent banner) — **DPDP Act 2023** aware
+
+### Phase F — Trust, legal & polish
+- [ ] Privacy + Terms page; verify "All reports are anonymous" is literally true (no IP/identity stored with reports, or disclose)
+- [ ] Real official data verification, real photos (currently avatar/initials fallback)
+- [ ] Empty / error / loading states; loading skeletons
+- [ ] Accessibility pass (focus, aria, contrast)
+- [ ] OG / share cards per report; PWA "add to home screen"
+
+### Phase G — Go-live & growth
+- [ ] Soft launch (beta testers / few wards) → full launch
+- [ ] **DMC / official outreach** (accountability model needs official engagement)
+- [ ] Feedback loop + iteration
+
+---
+
+## 🧊 BACKLOG (non-blocking)
+- [ ] Adopt **MarkerClusterer** in real map (demo built; choose heat-overlay coexistence) — or delete `/cluster-demo`
 - [ ] **City boundary outline** (overall Dibrugarh border)
 - [ ] **Refine remaining ward polygons** (only 3, 6, 14 adjusted; ~19 still rough)
-- [ ] Optional: migrate `google.maps.Marker` → `AdvancedMarkerElement` (deprecation warnings)
-
-### 🔧 Functional gaps
-- [ ] Wire **"File a complaint"** beyond tel: (escalation flow?)
-- [ ] Citizen-count / duplicate-report aggregation logic (currently manual `citizen_count`)
-- [ ] Real **official photos** (currently avatar/initials fallback)
-- [ ] Real **social media links** (currently placeholder handles in `Header.js`)
-- [ ] Decide fate of `/cluster-demo` (adopt / keep / delete)
+- [ ] Migrate `google.maps.Marker` → `AdvancedMarkerElement` (deprecation warnings)
 - [ ] Verify true DMC executive officer roles/names (currently standard ULB placeholders)
-
-### 🎨 Polish / nice-to-have
-- [ ] Empty/error states across pages
-- [ ] Loading skeletons (vs. "Loading…" text)
-- [ ] Share-card / OG image per report
-- [ ] Accessibility pass (focus states, aria, contrast)
-- [ ] PWA / installability
-- [ ] Notifications (explicitly removed earlier — revisit if wanted)
+- [ ] Wire "File a complaint" beyond `tel:` (escalation flow)
 
 ---
 
@@ -109,4 +143,6 @@ Last updated: 2026-06-11.
 - **Map:** Google Maps JavaScript API
 - **Database/Storage/Auth:** Supabase (PostgreSQL)
 - **Hosting:** Vercel
+- **Analytics (planned):** Vercel Web Analytics + PostHog
+- **Domain (planned):** xakkhi.in
 - **Wards:** 22 wards of Dibrugarh Municipal Corporation (DMC)

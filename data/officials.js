@@ -1,3 +1,8 @@
+// Direct Call / WhatsApp CTAs to officials are HIDDEN pending verification that
+// each number is an officially-published public contact (not a personal mobile).
+// Flip to true only after that audit + consent check. See PROGRESS.md / pre-release-security.
+export const SHOW_OFFICIAL_CONTACT = false;
+
 export const CITY_OFFICIALS = [
   {
     slug: 'mayor',
