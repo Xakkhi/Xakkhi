@@ -82,8 +82,10 @@ Last updated: 2026-06-11.
 - [x] Optimistic insert on submit + reconnect-refetch guard
 
 ### Phase B — Security hardening *(LAUNCH BLOCKERS)*
-- [ ] RLS lockdown: anon **insert-only** on reports; move cleanup/flag to insert-only `report_actions` table
-- [ ] **Admin auth** on `/review` (Supabase Auth)
+- [x] **Admin auth** (magic-link + allow-list) — `AuthProvider`/`useAdmin`, `/login`, `data/admins.js` + DB `is_admin()`
+- [x] Move cleanup/flag to insert-only `report_actions` table; soft-remove (`is_removed`) + admin override (Remove/Restore/Edit); `report_seen` for "I've seen this"
+- [x] **`/review` locked** behind admin auth
+- [~] RLS lockdown — Part A applied (additive); **Part B (drop anon update) pending** run + verify
 - [ ] Storage policy audit (scoped paths, file type/size limits)
 - [ ] Anti-spam / rate limiting on submissions (per-device throttle)
 
@@ -95,6 +97,7 @@ Last updated: 2026-06-11.
 
 ### Phase D — Launch infrastructure
 - [ ] ⭐ **PRIORITY — Register + connect domain `xakkhi.in`** (registrar purchase → Vercel DNS → auto-SSL → www/apex redirect)
+- [ ] **Configure custom SMTP for auth emails** (Resend / Brevo / SES) — Supabase's built-in email is rate-limited (~few/hr) and "not for production"; magic-link admin logins need real SMTP. Usually wants a verified sending domain, so pair with the domain task.
 - [ ] **Google Maps API key restriction** (HTTP referrer lock to domain) — security **and** cost control
 - [ ] Production env vars separated from preview
 - [ ] Supabase production readiness (tier, backups, connection pooling)
