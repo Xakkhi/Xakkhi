@@ -3,6 +3,7 @@ import './globals.css';
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
 import { ReportsProvider } from '../components/ReportsProvider';
+import { AuthProvider } from '../components/AuthProvider';
 
 const fraunces = Fraunces({
   subsets: ['latin'],
@@ -50,13 +51,15 @@ export default function RootLayout({ children }) {
           background: '#FAFAF8',
         }}
       >
-        <ReportsProvider>
-          <Header />
-          <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
-            {children}
-          </main>
-          <BottomNav />
-        </ReportsProvider>
+        <AuthProvider>
+          <ReportsProvider>
+            <Header />
+            <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
+              {children}
+            </main>
+            <BottomNav />
+          </ReportsProvider>
+        </AuthProvider>
       </body>
     </html>
   );

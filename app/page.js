@@ -19,7 +19,7 @@ export default function HomePage() {
 
   const filtered = useMemo(() => {
     return reports.filter((r) => {
-      if (r.flag_status === 'approved') return false; // removed from public map
+      if (r.is_removed) return false; // soft-removed by admin/flag — hidden from public map
       if (filters.category && r.category !== filters.category) return false;
       if (filters.severity && r.severity !== filters.severity) return false;
       if (filters.status && r.status !== filters.status) return false;

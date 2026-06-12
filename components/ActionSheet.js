@@ -63,11 +63,14 @@ export default function ActionSheet({ report, type, onClose, onDone }) {
       const { data: pub } = supabase.storage.from('report-photos').getPublicUrl(path);
       const url = pub.publicUrl;
 
-      const patch = type === 'clean'
-        ? { verification_photo_url: url, cleanup_status: 'pending_review' }
-        : { flag_photo_url: url, flag_status: 'pending_review' };
-
-      const { error: dbErr } = await supabase.from('reports').update(patch).eq('id', report.id);
+      // Insert-only "suggestion" — the report itself is NOT touched. It stays
+      // exactly as the public sees it until an admin approves this in /review.
+      const { error: dbErr } = await supabase.from('report_actions').insert({
+        report_id: report.id,
+        action_type: type === 'clean' ? 'cleanup' : 'flag',
+        photo_url: url,
+        status: 'pending',
+      });
       if (dbErr) throw dbErr;
 
       onDone?.(type);

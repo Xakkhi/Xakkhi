@@ -12,7 +12,7 @@ export default function LeaderboardPage() {
 
   // Exclude reports removed via an approved flag from public analytics.
   const reports = useMemo(
-    () => allReports.filter((r) => r.flag_status !== 'approved'),
+    () => allReports.filter((r) => !r.is_removed),
     [allReports]
   );
 

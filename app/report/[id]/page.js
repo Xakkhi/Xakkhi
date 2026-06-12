@@ -7,8 +7,10 @@ import { supabase } from '../../../lib/supabase';
 import { WARDS } from '../../../data/wards';
 import { CATEGORIES, SEVERITY_COLORS } from '../../../data/categories';
 import { SHOW_OFFICIAL_CONTACT } from '../../../data/officials';
+import { CATEGORY_LIST } from '../../../data/categories';
 import AccountabilityTree from '../../../components/AccountabilityTree';
 import ActionSheet from '../../../components/ActionSheet';
+import { useAdmin } from '../../../components/AuthProvider';
 
 function daysOld(dateStr) {
   return Math.max(0, Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000));
@@ -17,6 +19,7 @@ function daysOld(dateStr) {
 export default function ReportDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+  const { isAdmin } = useAdmin();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [seenMarked, setSeenMarked] = useState(false);
@@ -70,11 +73,18 @@ export default function ReportDetailPage() {
   async function handleSeenThis() {
     if (seenMarked) return;
     setSeenMarked(true);
-    await supabase
-      .from('reports')
-      .update({ seen_count: (report.seen_count || 0) + 1 })
-      .eq('id', report.id);
+    // Insert-only into report_seen; a DB trigger bumps reports.seen_count.
+    // (Citizens can no longer update reports directly.)
+    await supabase.from('report_seen').insert({ report_id: report.id });
     setReport((r) => ({ ...r, seen_count: (r.seen_count || 0) + 1 }));
+  }
+
+  // Admin-only: update report fields (RLS allows only allow-listed admins).
+  async function adminUpdate(patch) {
+    const { error } = await supabase.from('reports').update(patch).eq('id', report.id);
+    if (error) { alert('Update failed: ' + error.message); return false; }
+    setReport((r) => ({ ...r, ...patch }));
+    return true;
   }
 
   function handleShare() {
@@ -89,6 +99,23 @@ export default function ReportDetailPage() {
 
   function handleDirections() {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${report.lat},${report.lng}`, '_blank');
+  }
+
+  // Soft-removed reports are invisible to the public; admins can still see &
+  // restore them.
+  if (report.is_removed && !isAdmin) {
+    return (
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAFAF8', padding: '20px' }}>
+        <div style={{ textAlign: 'center', maxWidth: '300px' }}>
+          <div style={{ fontSize: '30px', marginBottom: '8px' }}>🚫</div>
+          <div style={{ fontSize: '17px', fontWeight: '800', color: '#1C1C1C' }}>Report removed</div>
+          <div style={{ fontSize: '13px', color: 'rgba(28,28,28,0.55)', marginTop: '6px', lineHeight: 1.5 }}>
+            This report has been removed by a moderator.
+          </div>
+          <button onClick={() => router.push('/')} style={{ ...linkBtnStyle, marginTop: '14px' }}>Back to map</button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -135,6 +162,11 @@ export default function ReportDetailPage() {
 
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
+        {/* Admin-only controls (invisible to citizens) */}
+        {isAdmin && (
+          <AdminPanel report={report} onUpdate={adminUpdate} />
+        )}
+
         {/* Category + Location */}
         <div style={{ padding: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
@@ -378,6 +410,105 @@ export default function ReportDetailPage() {
       )}
     </div>
   );
+}
+
+const SEVERITY_OPTIONS = ['minor', 'moderate', 'severe', 'critical'];
+
+function AdminPanel({ report, onUpdate }) {
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({
+    category: report.category,
+    severity: report.severity,
+    ward_number: report.ward_number,
+  });
+
+  async function toggleRemoved() {
+    setBusy(true);
+    await onUpdate({ is_removed: !report.is_removed });
+    setBusy(false);
+  }
+
+  async function saveEdit() {
+    setBusy(true);
+    const ok = await onUpdate({
+      category: form.category,
+      severity: form.severity,
+      ward_number: Number(form.ward_number),
+    });
+    setBusy(false);
+    if (ok) setEditing(false);
+  }
+
+  return (
+    <div style={{
+      margin: '12px 16px 0', padding: '12px 14px', borderRadius: '12px',
+      background: '#1C1C1C', color: 'white',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+        <span style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '0.5px', color: '#F77F00' }}>ADMIN CONTROLS</span>
+        {report.is_removed && (
+          <span style={{ fontSize: '10px', fontWeight: '700', padding: '1px 7px', borderRadius: '10px', background: 'rgba(220,38,38,0.25)', color: '#FCA5A5' }}>
+            REMOVED
+          </span>
+        )}
+      </div>
+
+      {!editing ? (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={toggleRemoved} disabled={busy} style={adminBtn(report.is_removed ? '#16A34A' : '#DC2626')}>
+            {report.is_removed ? 'Restore' : 'Remove'}
+          </button>
+          <button onClick={() => setEditing(true)} disabled={busy} style={adminBtn('rgba(255,255,255,0.14)')}>
+            Edit
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <AdminField label="Category">
+            <select value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} style={adminSelect}>
+              {CATEGORY_LIST.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
+          </AdminField>
+          <AdminField label="Severity">
+            <select value={form.severity} onChange={(e) => setForm((f) => ({ ...f, severity: e.target.value }))} style={adminSelect}>
+              {SEVERITY_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </AdminField>
+          <AdminField label="Ward">
+            <select value={form.ward_number} onChange={(e) => setForm((f) => ({ ...f, ward_number: e.target.value }))} style={adminSelect}>
+              {WARDS.map((w) => <option key={w.wardNumber} value={w.wardNumber}>Ward {w.wardNumber} · {w.areaName}</option>)}
+            </select>
+          </AdminField>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '2px' }}>
+            <button onClick={saveEdit} disabled={busy} style={adminBtn('#16A34A')}>{busy ? 'Saving…' : 'Save'}</button>
+            <button onClick={() => setEditing(false)} disabled={busy} style={adminBtn('rgba(255,255,255,0.14)')}>Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminField({ label, children }) {
+  return (
+    <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', width: '64px', flexShrink: 0 }}>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+const adminSelect = {
+  flex: 1, padding: '7px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)',
+  background: 'rgba(255,255,255,0.06)', color: 'white', fontSize: '13px', outline: 'none',
+};
+
+function adminBtn(bg) {
+  return {
+    flex: 1, padding: '9px', borderRadius: '9px', border: 'none', cursor: 'pointer',
+    background: bg, color: 'white', fontWeight: '700', fontSize: '13px',
+  };
 }
 
 function BeforeAfter({ before, after, cleanDays, resolvedAt, createdAt }) {

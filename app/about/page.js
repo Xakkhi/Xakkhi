@@ -10,7 +10,7 @@ export default function AboutPage() {
   const { reports: allReports } = useReports();
 
   const stats = useMemo(() => {
-    const reports = allReports.filter((r) => r.flag_status !== 'approved');
+    const reports = allReports.filter((r) => !r.is_removed);
     const total = reports.length;
     const resolved = reports.filter((r) => r.status === 'resolved').length;
     const wardsCovered = new Set(reports.map((r) => r.ward_number)).size;
