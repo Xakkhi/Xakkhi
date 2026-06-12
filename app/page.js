@@ -1,11 +1,11 @@
 'use client';
 
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import FilterChips from '../components/FilterChips';
-import { supabase } from '../lib/supabase';
+import { useReports } from '../components/ReportsProvider';
 
 const MapView = dynamic(() => import('../components/MapView'), { ssr: false });
 
@@ -15,32 +15,11 @@ export default function HomePage() {
     severity: null,
     status: null,
   });
-  const [reports, setReports] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchReports() {
-      try {
-        const { data, error } = await supabase
-          .from('reports')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('[Home] Fetch reports failed:', error);
-        } else {
-          setReports((data || []).filter((r) => r.flag_status !== 'approved'));
-        }
-      } catch (err) {
-        console.error('[Home] Fetch error:', err);
-      }
-      setIsLoading(false);
-    }
-    fetchReports();
-  }, []);
+  const { reports, loading: isLoading } = useReports();
 
   const filtered = useMemo(() => {
     return reports.filter((r) => {
+      if (r.flag_status === 'approved') return false; // removed from public map
       if (filters.category && r.category !== filters.category) return false;
       if (filters.severity && r.severity !== filters.severity) return false;
       if (filters.status && r.status !== filters.status) return false;

@@ -1,27 +1,20 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { supabase } from '../../lib/supabase';
+import { useReports } from '../../components/ReportsProvider';
 import { WARDS } from '../../data/wards';
 import { CATEGORIES } from '../../data/categories';
 
 export default function LeaderboardPage() {
-  const [reports, setReports] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { reports: allReports, loading: isLoading } = useReports();
   const [sortBy, setSortBy] = useState('worst');
 
-  useEffect(() => {
-    async function fetchReports() {
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (!error) setReports((data || []).filter((r) => r.flag_status !== 'approved'));
-      setIsLoading(false);
-    }
-    fetchReports();
-  }, []);
+  // Exclude reports removed via an approved flag from public analytics.
+  const reports = useMemo(
+    () => allReports.filter((r) => r.flag_status !== 'approved'),
+    [allReports]
+  );
 
   const cityStats = useMemo(() => {
     const total = reports.length;

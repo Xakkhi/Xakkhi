@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '../../../lib/supabase';
+import { useReports } from '../../../components/ReportsProvider';
 import { WARDS } from '../../../data/wards';
 import { CITY_OFFICIALS, SHOW_OFFICIAL_CONTACT } from '../../../data/officials';
 import { CATEGORIES } from '../../../data/categories';
@@ -11,8 +11,13 @@ import { CATEGORIES } from '../../../data/categories';
 export default function OfficialDetailPage() {
   const { slug } = useParams();
   const router = useRouter();
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { reports: allReports, loading } = useReports();
+
+  // Exclude reports removed via an approved flag from public analytics.
+  const reports = useMemo(
+    () => allReports.filter((r) => r.flag_status !== 'approved'),
+    [allReports]
+  );
 
   const isWard = slug.startsWith('ward-');
   const wardNumber = isWard ? Number(slug.replace('ward-', '')) : null;
@@ -22,18 +27,6 @@ export default function OfficialDetailPage() {
   const person = isWard
     ? { name: ward?.commissionerName || 'Vacant', role: `Ward ${wardNumber} Commissioner`, body: ward?.areaName, phone: ward?.commissionerPhone, party: ward?.commissionerParty }
     : official;
-
-  useEffect(() => {
-    async function loadReports() {
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (!error) setReports((data || []).filter((r) => r.flag_status !== 'approved'));
-      setLoading(false);
-    }
-    loadReports();
-  }, []);
 
   const stats = useMemo(() => {
     const relevant = isWard

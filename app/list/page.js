@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import FilterChips from '../../components/FilterChips';
-import { supabase } from '../../lib/supabase';
+import { useReports } from '../../components/ReportsProvider';
 import { WARDS } from '../../data/wards';
 import { CATEGORIES, SEVERITY_COLORS, STATUS_COLORS } from '../../data/categories';
 
@@ -19,24 +19,12 @@ function timeAgo(dateStr) {
 
 export default function ListPage() {
   const [filters, setFilters] = useState({ category: null, severity: null, status: null });
-  const [reports, setReports] = useState([]);
   const [expandedWard, setExpandedWard] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchReports() {
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (!error) setReports((data || []).filter((r) => r.flag_status !== 'approved'));
-      setIsLoading(false);
-    }
-    fetchReports();
-  }, []);
+  const { reports, loading: isLoading } = useReports();
 
   const filtered = useMemo(() => {
     return reports.filter((r) => {
+      if (r.flag_status === 'approved') return false; // removed from public list
       if (filters.category && r.category !== filters.category) return false;
       if (filters.severity && r.severity !== filters.severity) return false;
       if (filters.status && r.status !== filters.status) return false;

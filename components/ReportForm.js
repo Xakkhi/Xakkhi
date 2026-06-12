@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { CATEGORIES, CATEGORY_LIST } from '../data/categories';
 import { isWithinDibrugarh, detectWard, compressPhoto, isLivePhoto } from '../lib/ward-detector';
 import { supabase } from '../lib/supabase';
+import { useReports } from './ReportsProvider';
 import LocationHelp from './LocationHelp';
 import QRCodeModal from './QRCodeModal';
 
@@ -19,6 +20,7 @@ const SEVERITY_COLORS = {
 export default function ReportForm() {
   const router = useRouter();
   const photoInputRef = useRef(null);
+  const { addReportOptimistic } = useReports();
 
   // Anti-fraud guards
   const [isDesktop, setIsDesktop] = useState(false);
@@ -120,18 +122,22 @@ export default function ReportForm() {
         }
       }
 
-      // Insert report into Supabase
-      const { error } = await supabase.from('reports').insert({
-        photo_url: photoUrl,
-        before_photo_url: photoUrl,
-        category,
-        sub_category: subCategory,
-        severity,
-        description: landmark.trim(),
-        lat: location.lat,
-        lng: location.lng,
-        ward_number: location.ward.wardNumber,
-      });
+      // Insert report into Supabase — return the row so we can show it instantly
+      const { data: inserted, error } = await supabase
+        .from('reports')
+        .insert({
+          photo_url: photoUrl,
+          before_photo_url: photoUrl,
+          category,
+          sub_category: subCategory,
+          severity,
+          description: landmark.trim(),
+          lat: location.lat,
+          lng: location.lng,
+          ward_number: location.ward.wardNumber,
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('[Report] Insert failed:', error);
@@ -139,6 +145,10 @@ export default function ReportForm() {
         setSubmitting(false);
         return;
       }
+
+      // Optimistic: add to the shared store so the submitter sees their own pin
+      // immediately. Realtime delivers it to everyone else (deduped by id).
+      if (inserted) addReportOptimistic(inserted);
 
       router.push('/report-success');
     } catch (err) {

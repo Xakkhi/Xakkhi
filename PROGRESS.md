@@ -74,12 +74,12 @@ Last updated: 2026-06-11.
 
 ## 🚀 LAUNCH ROADMAP (pending — ordered by dependency)
 
-### Phase A — Real-time data layer *(foundational, start here)*
-- [ ] `ReportsProvider` context = single source of truth + `useReports()` hook
-- [ ] Enable Supabase Realtime on `reports` (`alter publication supabase_realtime add table reports;`)
-- [ ] One Realtime channel: subscribe to INSERT / UPDATE / DELETE, merge into shared state
-- [ ] Refactor Map / List / Leaderboard / Official / About / Review to consume context (drop per-page fetches)
-- [ ] Optimistic insert on submit + reconnect-refetch guard
+### Phase A — Real-time data layer ✅ DONE
+- [x] `ReportsProvider` context = single source of truth + `useReports()` hook
+- [x] Supabase Realtime enabled on `reports` (verified live INSERT + UPDATE push)
+- [x] One Realtime channel: subscribe to INSERT / UPDATE / DELETE, merge into shared state
+- [x] Refactor Map / List / Leaderboard / Official / About / Review to consume context (dropped per-page fetches)
+- [x] Optimistic insert on submit + reconnect-refetch guard
 
 ### Phase B — Security hardening *(LAUNCH BLOCKERS)*
 - [ ] RLS lockdown: anon **insert-only** on reports; move cleanup/flag to insert-only `report_actions` table

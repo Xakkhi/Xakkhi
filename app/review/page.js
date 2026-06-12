@@ -1,31 +1,28 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
+import { useReports } from '../../components/ReportsProvider';
 import { WARDS } from '../../data/wards';
 import { CATEGORIES } from '../../data/categories';
 
 export default function ReviewQueuePage() {
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { reports, loading } = useReports();
   const [tab, setTab] = useState('cleanup'); // 'cleanup' | 'flag'
   const [busyId, setBusyId] = useState(null);
+  // Ids already approved/rejected this session — hidden immediately so the row
+  // disappears on click, without waiting for the Realtime UPDATE to land.
+  const [actedIds, setActedIds] = useState(() => new Set());
 
-  async function load() {
-    const { data, error } = await supabase
-      .from('reports')
-      .select('*')
-      .or('cleanup_status.eq.pending_review,flag_status.eq.pending_review')
-      .order('created_at', { ascending: false });
-    if (!error) setReports(data || []);
-    setLoading(false);
-  }
-
-  useEffect(() => { load(); }, []);
-
-  const cleanups = useMemo(() => reports.filter((r) => r.cleanup_status === 'pending_review'), [reports]);
-  const flags = useMemo(() => reports.filter((r) => r.flag_status === 'pending_review'), [reports]);
+  const cleanups = useMemo(
+    () => reports.filter((r) => r.cleanup_status === 'pending_review' && !actedIds.has(r.id)),
+    [reports, actedIds]
+  );
+  const flags = useMemo(
+    () => reports.filter((r) => r.flag_status === 'pending_review' && !actedIds.has(r.id)),
+    [reports, actedIds]
+  );
   const items = tab === 'cleanup' ? cleanups : flags;
 
   async function decide(report, decision) {
@@ -53,7 +50,8 @@ export default function ReviewQueuePage() {
     if (error) {
       alert('Update failed: ' + error.message);
     } else {
-      setReports((prev) => prev.filter((r) => r.id !== report.id));
+      // Realtime will reconcile the shared list; hide it locally right away.
+      setActedIds((prev) => new Set(prev).add(report.id));
     }
     setBusyId(null);
   }

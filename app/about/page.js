@@ -1,28 +1,21 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
-import { supabase } from '../../lib/supabase';
+import { useReports } from '../../components/ReportsProvider';
 import { WARDS } from '../../data/wards';
 import { CATEGORY_LIST } from '../../data/categories';
 
 export default function AboutPage() {
-  const [reports, setReports] = useState([]);
-
-  useEffect(() => {
-    async function load() {
-      const { data, error } = await supabase.from('reports').select('status, ward_number, flag_status');
-      if (!error) setReports((data || []).filter((r) => r.flag_status !== 'approved'));
-    }
-    load();
-  }, []);
+  const { reports: allReports } = useReports();
 
   const stats = useMemo(() => {
+    const reports = allReports.filter((r) => r.flag_status !== 'approved');
     const total = reports.length;
     const resolved = reports.filter((r) => r.status === 'resolved').length;
     const wardsCovered = new Set(reports.map((r) => r.ward_number)).size;
     return { total, resolved, wardsCovered };
-  }, [reports]);
+  }, [allReports]);
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', background: '#FAFAF8' }}>
