@@ -88,6 +88,7 @@ Last updated: 2026-06-11.
 - [ ] Anti-spam / rate limiting on submissions (per-device throttle)
 
 ### Phase C — Data integrity & moderation
+- [ ] ⭐ **Refine all 22 ward polygons** (source real DMC ward boundaries / GIS shapefile) — only 3, 6, 14 hand-refined; rest are rough quads with junction gaps. Detection logic is fixed (point-in-polygon + nearest-edge fallback), so this is now purely a **data-quality** task — but it's what locks in 100% ward accuracy for real reports. MUST be done before launch.
 - [ ] **Delete test seed data**
 - [ ] Citizen-count / duplicate-report aggregation (nearby same-category → bump `citizen_count`)
 - [ ] Admin notification when items hit the review queue
@@ -131,7 +132,6 @@ Last updated: 2026-06-11.
 ## 🧊 BACKLOG (non-blocking)
 - [ ] Adopt **MarkerClusterer** in real map (demo built; choose heat-overlay coexistence) — or delete `/cluster-demo`
 - [ ] **City boundary outline** (overall Dibrugarh border)
-- [ ] **Refine remaining ward polygons** (only 3, 6, 14 adjusted; ~19 still rough)
 - [ ] Migrate `google.maps.Marker` → `AdvancedMarkerElement` (deprecation warnings)
 - [ ] Verify true DMC executive officer roles/names (currently standard ULB placeholders)
 - [ ] Wire "File a complaint" beyond `tel:` (escalation flow)
