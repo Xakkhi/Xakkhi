@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CATEGORIES, CATEGORY_LIST } from '../data/categories';
-import { isWithinDibrugarh, detectWard, compressPhoto, isLivePhoto } from '../lib/ward-detector';
+import { isWithinDibrugarh, detectWard, isLivePhoto } from '../lib/ward-detector';
+import { optimizeImage, extForMime, NotAnImageError, ImageTooLargeError } from '../lib/image';
 import { supabase } from '../lib/supabase';
 import { useReports } from './ReportsProvider';
 import LocationHelp from './LocationHelp';
@@ -85,7 +86,17 @@ export default function ReportForm() {
       setPhotoError('This looks like an older photo. Please take a fresh photo now.');
     }
 
-    const compressed = await compressPhoto(file, 500);
+    let compressed;
+    try {
+      compressed = await optimizeImage(file, { targetKB: 400 });
+    } catch (err) {
+      if (err instanceof NotAnImageError || err instanceof ImageTooLargeError) {
+        setPhotoError(err.message);
+      } else {
+        setPhotoError('Could not process that photo. Please try another.');
+      }
+      return;
+    }
     if (photoPreview) URL.revokeObjectURL(photoPreview);
     setPhoto(compressed);
     setPhotoPreview(URL.createObjectURL(compressed));
@@ -106,10 +117,10 @@ export default function ReportForm() {
       // Upload photo to Supabase Storage
       let photoUrl = null;
       if (photo) {
-        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extForMime(photo.type)}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('report-photos')
-          .upload(fileName, photo, { contentType: 'image/jpeg' });
+          .upload(fileName, photo, { contentType: photo.type });
 
         if (uploadError) {
           console.error('[Report] Photo upload failed:', uploadError);

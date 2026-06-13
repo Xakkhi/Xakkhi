@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { optimizeImage, extForMime, NotAnImageError, ImageTooLargeError } from '../lib/image';
 
 // type: 'clean' | 'flag'
 const COPY = {
@@ -51,13 +52,25 @@ export default function ActionSheet({ report, type, onClose, onDone }) {
     setSubmitting(true);
     setError(null);
     try {
+      // Optimize on-device first: shrink, compress, and strip EXIF (hidden GPS).
+      let blob;
+      try {
+        blob = await optimizeImage(file, { targetKB: 400 });
+      } catch (e) {
+        if (e instanceof NotAnImageError || e instanceof ImageTooLargeError) {
+          setError(e.message);
+          setSubmitting(false);
+          return;
+        }
+        throw e;
+      }
+
       const folder = type === 'clean' ? 'verification' : 'disputes';
-      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      const path = `${folder}/${report.id}-${Date.now()}.${ext}`;
+      const path = `${folder}/${report.id}-${Date.now()}.${extForMime(blob.type)}`;
 
       const { error: upErr } = await supabase.storage
         .from('report-photos')
-        .upload(path, file, { cacheControl: '3600', upsert: false });
+        .upload(path, blob, { cacheControl: '3600', upsert: false, contentType: blob.type });
       if (upErr) throw upErr;
 
       const { data: pub } = supabase.storage.from('report-photos').getPublicUrl(path);
