@@ -85,7 +85,7 @@ Last updated: 2026-06-11.
 - [x] **Admin auth** (magic-link + allow-list) — `AuthProvider`/`useAdmin`, `/login`, `data/admins.js` + DB `is_admin()`
 - [x] Move cleanup/flag to insert-only `report_actions` table; soft-remove (`is_removed`) + admin override (Remove/Restore/Edit); `report_seen` for "I've seen this"
 - [x] **`/review` locked** behind admin auth
-- [~] RLS lockdown — Part A applied (additive); **Part B (drop anon update) pending** run + verify
+- [x] RLS lockdown — anon is insert-only on reports; **verified anon UPDATE blocked** (0 rows) and `report_actions` hidden from anon, while public reads still work
 - [ ] Storage policy audit (scoped paths, file type/size limits)
 - [ ] Anti-spam / rate limiting on submissions (per-device throttle)
 
