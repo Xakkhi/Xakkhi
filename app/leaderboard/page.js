@@ -110,12 +110,14 @@ export default function WardHealthPage() {
               {topIssues.length === 0 ? (
                 <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>None open</div>
               ) : (
-                topIssues.map((t, i) => (
-                  <div key={t.id} style={{ fontSize: '12px', color: '#fff', marginTop: i === 0 ? '4px' : '2px' }}>
-                    {SHORT_CAT[t.id] || CATEGORIES[t.id]?.label || t.id}
-                    <span style={{ color: 'rgba(255,255,255,0.45)', marginLeft: '6px' }}>{t.count}</span>
-                  </div>
-                ))
+                <div style={{ display: 'flex', gap: '22px', marginTop: '4px', fontSize: '12px', color: '#fff' }}>
+                  {topIssues.map((t) => (
+                    <span key={t.id} style={{ whiteSpace: 'nowrap' }}>
+                      {SHORT_CAT[t.id] || CATEGORIES[t.id]?.label || t.id}
+                      <span style={{ color: 'rgba(255,255,255,0.45)', marginLeft: '6px' }}>{t.count}</span>
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
             <div style={{ flex: 1, background: 'rgba(220,38,38,0.16)', borderRadius: '10px', padding: '8px 10px' }}>
