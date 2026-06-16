@@ -136,8 +136,17 @@ Last updated: 2026-06-11.
 - [ ] Adopt **MarkerClusterer** in real map (demo built; choose heat-overlay coexistence) — or delete `/cluster-demo`
 - [ ] **City boundary outline** (overall Dibrugarh border)
 - [ ] Migrate `google.maps.Marker` → `AdvancedMarkerElement` (deprecation warnings)
-- [ ] Verify true DMC executive officer roles/names (currently standard ULB placeholders)
-- [ ] Wire "File a complaint" beyond `tel:` (escalation flow)
+- [ ] Verify officials' real names (Mayor / Deputy Mayor / Commissioner DMC / MLA / MP / ward councillors) in `data/*.js`
+- [ ] (Optional, later) Move officials/wards data to a DB table + admin edit screen, so non-technical staff can update without a code change
+
+---
+
+## 🛠 Maintenance notes
+- **Officials & ward data are stored in code, not the database.** To edit a Mayor, Deputy Mayor, Commissioner, MLA, MP, or a ward councillor's name/party:
+  edit `data/wards.js` (ward names, coords, councillors) / `data/officials.js` (city officials) / `data/hierarchy.js` (DMC structure), then commit + push → Vercel auto-redeploys (~1–2 min, no downtime).
+  - Quick one-off edits can be made directly in **GitHub's web editor** (open the file → pencil → commit) — no local setup needed.
+  - Only the live **reports** (and `report_actions`, `report_seen`, auth) live in Supabase. Page reframes / terminology / aggregations are display-only and need **no DB changes**.
+- **"File a complaint"** opens a blank Gmail compose to `municipalitydmb@gmail.com` (in `app/report/[id]/page.js`).
 
 ---
 
