@@ -25,7 +25,7 @@ export default function OfficialDetailPage() {
   const official = isWard ? null : CITY_OFFICIALS.find((o) => o.slug === slug);
 
   const person = isWard
-    ? { name: ward?.commissionerName || 'Vacant', role: `Ward ${wardNumber} Commissioner`, body: ward?.areaName, phone: ward?.commissionerPhone, party: ward?.commissionerParty }
+    ? { name: ward?.commissionerName || 'Vacant', role: `Ward ${wardNumber} Councillor`, body: ward?.areaName, phone: ward?.commissionerPhone, party: ward?.commissionerParty }
     : official;
 
   const stats = useMemo(() => {

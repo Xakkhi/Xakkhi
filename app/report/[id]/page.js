@@ -291,7 +291,7 @@ export default function ReportDetailPage() {
                 {ward?.areaName || `Ward ${report.ward_number}`}
               </div>
               <div style={{ fontSize: '12px', color: 'rgba(28,28,28,0.5)' }}>
-                {ward?.commissionerName || 'Vacant'} · {ward?.commissionerPosition || ''}
+                {ward?.commissionerName ? `${ward.commissionerName} · Ward councillor` : 'Vacant'}
               </div>
             </div>
             {SHOW_OFFICIAL_CONTACT && ward?.commissionerPhone && (
@@ -318,16 +318,15 @@ export default function ReportDetailPage() {
           border: '1px solid rgba(0,0,0,0.06)',
         }}>
           <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(28,28,28,0.4)', letterSpacing: '0.5px', marginBottom: '10px' }}>
-            ACCOUNTABILITY
+            WHO CAN HELP HERE
           </div>
           <AccountabilityTree wardNumber={report.ward_number} ward={ward} />
         </div>
 
-        {/* File a complaint */}
+        {/* File a complaint — opens a blank Gmail compose to the DMC inbox */}
         <button
           onClick={() => {
-            // Route to the ward's accountability page, not a personal mobile.
-            window.location.href = `/official/ward-${report.ward_number}`;
+            window.open('https://mail.google.com/mail/?view=cm&fs=1&to=municipalitydmb@gmail.com', '_blank', 'noopener,noreferrer');
           }}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',

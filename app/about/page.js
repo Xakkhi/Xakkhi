@@ -69,7 +69,7 @@ export default function AboutPage() {
       <Section title="Built on accountability">
         <div style={{ background: 'white', borderRadius: '14px', border: '1px solid rgba(0,0,0,0.06)', padding: '16px' }}>
           <p style={{ fontSize: '14px', color: 'rgba(28,28,28,0.7)', lineHeight: 1.6, margin: 0 }}>
-            A report isn't just a pin on a map. Each one is linked to the people responsible — your <strong>Ward Commissioner</strong>, the <strong>DMC</strong> officials and engineers, and your elected <strong>MLA</strong> and <strong>MP</strong>.
+            A report isn't just a pin on a map. Each one is linked to the people responsible — your <strong>Ward Councillor</strong>, the <strong>DMC</strong>, and your elected <strong>MLA</strong> and <strong>MP</strong>.
           </p>
           <p style={{ fontSize: '14px', color: 'rgba(28,28,28,0.7)', lineHeight: 1.6, margin: '10px 0 0' }}>
             The leaderboard ranks every ward by how much gets actually resolved — turning quiet neglect into something everyone can see.

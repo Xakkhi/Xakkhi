@@ -25,7 +25,7 @@ export const CITY_OFFICIALS = [
   {
     slug: 'commissioner-dmc',
     name: 'Navas Kumar Das',
-    role: 'Commissioner',
+    role: 'Commissioner, DMC',
     body: 'Dibrugarh Municipal Corporation',
     phone: null,
     wardNumber: null,
