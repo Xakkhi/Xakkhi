@@ -241,8 +241,8 @@ export default function ReportDetailPage() {
           background: 'white', borderRadius: '14px',
           border: '1px solid rgba(0,0,0,0.06)',
         }}>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: '20px', fontWeight: '800', color: '#1C1C1C' }}>
+          <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
+            <div style={{ height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: '800', color: '#1C1C1C' }}>
               {report.seen_count || 0}
             </div>
             <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(28,28,28,0.4)', marginTop: '2px' }}>
@@ -250,8 +250,8 @@ export default function ReportDetailPage() {
             </div>
           </div>
           <div style={{ width: '1px', background: 'rgba(0,0,0,0.06)' }} />
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: '20px', fontWeight: '800', color: days > 7 ? '#DC2626' : '#1C1C1C' }}>
+          <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
+            <div style={{ height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: '800', color: days > 7 ? '#DC2626' : '#1C1C1C' }}>
               {days}
             </div>
             <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(28,28,28,0.4)', marginTop: '2px' }}>
@@ -259,8 +259,8 @@ export default function ReportDetailPage() {
             </div>
           </div>
           <div style={{ width: '1px', background: 'rgba(0,0,0,0.06)' }} />
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: '14px', fontWeight: '800', color: '#1C1C1C', fontFamily: 'monospace' }}>
+          <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
+            <div style={{ height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '800', color: '#1C1C1C', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', padding: '0 6px' }}>
               {report.sub_category || cat?.label || '—'}
             </div>
             <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(28,28,28,0.4)', marginTop: '2px' }}>
