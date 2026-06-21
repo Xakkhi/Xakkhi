@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
+import { detectWard } from '../../../lib/ward-detector';
 import { WARDS } from '../../../data/wards';
 import { CATEGORIES, SEVERITY_COLORS } from '../../../data/categories';
 import { SHOW_OFFICIAL_CONTACT } from '../../../data/officials';
@@ -39,7 +40,12 @@ export default function ReportDetailPage() {
         .select('*')
         .eq('id', id)
         .single();
-      if (!error && data) setReport(data);
+      if (!error && data) {
+        // Derive ward from actual coordinates so the ward card + "Who can help
+        // here" always match where the report sits (consistent with the map).
+        const w = (data.lat != null && data.lng != null) ? detectWard(data.lat, data.lng) : null;
+        setReport(w ? { ...data, ward_number: w.wardNumber } : data);
+      }
       setLoading(false);
     }
     loadReport();

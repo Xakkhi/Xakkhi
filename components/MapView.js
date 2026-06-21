@@ -48,6 +48,34 @@ function dotSVG(color, size) {
   return 'data:image/svg+xml;base64,' + btoa(svg);
 }
 
+// ─── Heat ramp ───────────────────────────────────────────────────────────────
+// t = 0 (no reports) → light base; t = 1 (busiest ward) → red. Continuous
+// interpolation between these anchor stops.
+const HEAT_STOPS = [
+  [0.0,  [252, 231, 223]], // #FCE7DF  base / empty ward
+  [0.25, [239, 185, 174]], // #EFB9AE  low
+  [0.5,  [238, 100, 90]],  // #EE645A  medium
+  [0.75, [246, 50, 45]],   // #F6322D  high
+  [1.0,  [255, 0, 0]],     // #FF0000  max
+];
+
+function heatColor(t) {
+  const x = Math.max(0, Math.min(1, t));
+  for (let i = 1; i < HEAT_STOPS.length; i++) {
+    const [t1, c1] = HEAT_STOPS[i];
+    if (x <= t1) {
+      const [t0, c0] = HEAT_STOPS[i - 1];
+      const f = t1 === t0 ? 0 : (x - t0) / (t1 - t0);
+      const r = Math.round(c0[0] + (c1[0] - c0[0]) * f);
+      const g = Math.round(c0[1] + (c1[1] - c0[1]) * f);
+      const b = Math.round(c0[2] + (c1[2] - c0[2]) * f);
+      return `rgb(${r},${g},${b})`;
+    }
+  }
+  const last = HEAT_STOPS[HEAT_STOPS.length - 1][1];
+  return `rgb(${last[0]},${last[1]},${last[2]})`;
+}
+
 // ─── Map styles (clean, minimal — matches NammaKasa aesthetic) ─────────────────
 
 const MAP_STYLES = [
@@ -102,7 +130,7 @@ export default function MapView({ filters, reports = [] }) {
 
         const map = new window.google.maps.Map(mapRef.current, {
           center: { lat: CITY_CENTER[0], lng: CITY_CENTER[1] },
-          zoom: 15,
+          zoom: 14,
           mapTypeId: 'roadmap',
           disableDefaultUI: true,
           styles: MAP_STYLES,
@@ -153,17 +181,15 @@ export default function MapView({ filters, reports = [] }) {
 
     const maxCount = Math.max(1, ...Object.values(unresolvedByWard));
 
-    // Draw ward boundary polygons with heat coloring
+    // Draw ward boundary polygons with heat coloring.
+    // Every ward gets the light base shade (t=0) so the whole city reads as one
+    // warm area when empty; wards darken toward red as unresolved reports rise.
     Object.entries(WARD_BOUNDARIES).forEach(([wardNum, coords]) => {
       const count = unresolvedByWard[Number(wardNum)] || 0;
-      const intensity = count / maxCount;
+      const intensity = maxCount > 0 ? count / maxCount : 0;
 
-      // cream → pink → red gradient based on report density
-      const r = 220 + Math.round(35 * intensity);
-      const g = Math.round(200 * (1 - intensity));
-      const b = Math.round(180 * (1 - intensity));
-      const fillColor = count > 0 ? `rgb(${r},${g},${b})` : '#f5f2ed';
-      const fillOpacity = count > 0 ? 0.08 + 0.17 * intensity : 0.03;
+      const fillColor = heatColor(intensity);
+      const fillOpacity = 0.5 + 0.2 * intensity; // solid-ish base (0.50) → 0.70 at max
 
       const poly = new window.google.maps.Polygon({
         paths: coords.map(([lat, lng]) => ({ lat, lng })),

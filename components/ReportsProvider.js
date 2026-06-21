@@ -16,6 +16,19 @@
 
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { detectWard } from '../lib/ward-detector';
+
+// Always derive a report's ward from its actual coordinates (point-in-polygon),
+// overriding the stored ward_number. This keeps the heat overlay, dots, Ward
+// Health, and official pages perfectly consistent with where each report sits —
+// and it self-corrects automatically if ward boundaries are ever updated.
+function withWard(r) {
+  if (r && r.lat != null && r.lng != null) {
+    const w = detectWard(r.lat, r.lng);
+    if (w) return { ...r, ward_number: w.wardNumber };
+  }
+  return r;
+}
 
 const ReportsContext = createContext({
   reports: [],
@@ -47,7 +60,7 @@ export function ReportsProvider({ children }) {
       console.error('[ReportsProvider] fetch failed:', err);
       setError(err.message);
     } else {
-      setReports(data || []);
+      setReports((data || []).map(withWard));
       setError(null);
     }
     setLoading(false);
@@ -57,7 +70,8 @@ export function ReportsProvider({ children }) {
   // Idempotent: Realtime will deliver the same row shortly; we dedupe by id.
   const addReportOptimistic = useCallback((report) => {
     if (!report?.id) return;
-    setReports((prev) => (prev.some((r) => r.id === report.id) ? prev : [report, ...prev]));
+    const row = withWard(report);
+    setReports((prev) => (prev.some((r) => r.id === row.id) ? prev : [row, ...prev]));
   }, []);
 
   useEffect(() => {
@@ -66,13 +80,13 @@ export function ReportsProvider({ children }) {
     const channel = supabase
       .channel('reports-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reports' }, (payload) => {
-        const row = payload.new;
-        if (!row?.id) return;
+        if (!payload.new?.id) return;
+        const row = withWard(payload.new);
         setReports((prev) => (prev.some((r) => r.id === row.id) ? prev : [row, ...prev]));
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'reports' }, (payload) => {
-        const row = payload.new;
-        if (!row?.id) return;
+        if (!payload.new?.id) return;
+        const row = withWard(payload.new);
         setReports((prev) =>
           prev.some((r) => r.id === row.id)
             ? prev.map((r) => (r.id === row.id ? row : r))
