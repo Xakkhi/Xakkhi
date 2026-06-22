@@ -51,7 +51,7 @@ function TelegramIcon({ size = 18 }) {
 
 const SOCIALS = [
   { name: 'Instagram', label: 'Instagram', href: 'https://instagram.com/xakkhi.dibrugarh', Icon: InstagramIcon },
-  { name: 'X', label: 'Twitter / X', href: 'https://twitter.com/xakkhi', Icon: XIcon },
+  { name: 'X', label: 'Twitter / X', href: 'https://x.com/XakkhiDibrugarh', Icon: XIcon },
   { name: 'Telegram', label: 'Telegram', href: 'https://t.me/xakkhi', Icon: TelegramIcon },
 ];
 
@@ -79,11 +79,11 @@ export default function Header() {
       }}
     >
       {/* Bilingual wordmark */}
-      <Link href="/" className="flex items-center gap-1 no-underline">
+      <Link href="/" className="flex gap-1 no-underline" style={{ alignItems: 'baseline' }}>
         <span style={{ color: 'white', fontSize: '20px', fontWeight: '800', fontFamily: 'Fraunces, serif', letterSpacing: '-0.5px' }}>
           Xakkhi
         </span>
-        <span style={{ color: '#F77F00', fontSize: '18px', fontWeight: '700', fontFamily: 'Noto Sans Bengali, sans-serif', marginLeft: '4px' }}>
+        <span style={{ color: '#F77F00', fontSize: '20px', fontWeight: '700', fontFamily: 'Noto Sans Bengali, sans-serif', marginLeft: '4px' }}>
           সাক্ষী
         </span>
       </Link>

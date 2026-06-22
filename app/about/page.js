@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useReports } from '../../components/ReportsProvider';
-import { WARDS } from '../../data/wards';
 import { CATEGORY_LIST } from '../../data/categories';
 
 export default function AboutPage() {
@@ -13,8 +12,8 @@ export default function AboutPage() {
     const reports = allReports.filter((r) => !r.is_removed);
     const total = reports.length;
     const resolved = reports.filter((r) => r.status === 'resolved').length;
-    const wardsCovered = new Set(reports.map((r) => r.ward_number)).size;
-    return { total, resolved, wardsCovered };
+    const resolutionRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
+    return { total, resolved, resolutionRate };
   }, [allReports]);
 
   return (
@@ -29,7 +28,7 @@ export default function AboutPage() {
           Dibrugarh's Civic Eye
         </div>
         <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', marginTop: '16px', lineHeight: 1.6, maxWidth: '420px', marginLeft: 'auto', marginRight: 'auto' }}>
-          A real-time tracker map of local civic issues like garbage, drainage, roads, streetlights and riverbanks. It gives citizens and the administration one shared, transparent picture — so problems get seen and resolved faster.
+          Xakkhi is an initiative aimed at strengthening collaboration between citizens and the administration by enabling faster, more transparent and accountable civic reporting and redressal.
         </div>
       </div>
 
@@ -39,8 +38,20 @@ export default function AboutPage() {
         <Divider />
         <Stat value={stats.resolved} label="Resolved" color="#16A34A" />
         <Divider />
-        <Stat value={`${stats.wardsCovered}/${WARDS.length}`} label="Wards" color="#F77F00" />
+        <Stat value={`${stats.resolutionRate}%`} label="Resolution" color="#F77F00" />
       </div>
+
+      {/* Our mission */}
+      <Section title="Our mission">
+        <div style={{ background: 'white', borderRadius: '14px', border: '1px solid rgba(0,0,0,0.06)', padding: '16px' }}>
+          <p style={{ fontSize: '14px', color: 'rgba(28,28,28,0.7)', lineHeight: 1.6, margin: 0, textAlign: 'justify' }}>
+            Citizens report and track civic concerns in real time, including issues related to garbage, drainage, roads, streetlights and riverbanks. Concerned authorities can use this platform to locate issues, find the exact spot using the Google Maps link on each report page, fix the problem, and submit a resolution report for verification. Active reports are displayed on an interactive map of Dibrugarh, ensuring greater visibility of civic concerns and facilitating timely action.
+          </p>
+          <p style={{ fontSize: '15px', color: '#F77F00', fontWeight: '700', lineHeight: 1.6, margin: '14px 0 0', textAlign: 'justify', fontFamily: 'Fraunces, serif' }}>
+            Let us work together to make Dibrugarh a cleaner, safer and better place to live in!
+          </p>
+        </div>
+      </Section>
 
       {/* How it works */}
       <Section title="How it works">
@@ -65,15 +76,17 @@ export default function AboutPage() {
         </div>
       </Section>
 
-      {/* Working together */}
-      <Section title="Working together">
-        <div style={{ background: 'white', borderRadius: '14px', border: '1px solid rgba(0,0,0,0.06)', padding: '16px' }}>
-          <p style={{ fontSize: '14px', color: 'rgba(28,28,28,0.7)', lineHeight: 1.6, margin: 0 }}>
-            Each report becomes part of one shared, real-time dashboard — sorted by ward and shared with the people who can help: your <strong>Ward Councillor</strong>, the <strong>DMC</strong>, and your elected <strong>MLA</strong> and <strong>MP</strong>.
-          </p>
-          <p style={{ fontSize: '14px', color: 'rgba(28,28,28,0.7)', lineHeight: 1.6, margin: '10px 0 0' }}>
-            <strong>Ward Health</strong> highlights the wards making real progress — so good work gets recognised.
-          </p>
+      {/* Features */}
+      <Section title="Features">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <FeatureCard icon="🗺️" title="Interactive map" text="Every active issue shown live on a map of Dibrugarh, colour-coded by severity." />
+          <FeatureCard icon="📍" title="Live location tagging" text="Each report is auto-pinned to the exact spot and ward where it's filed." />
+          <FeatureCard icon="🧭" title="Get directions" text="One tap opens Google Maps to the exact location of any issue." />
+          <FeatureCard icon="⚡" title="Real-time updates" text="New reports and resolutions appear instantly." />
+          <FeatureCard icon="📷" title="On-the-spot photo" text="Reports are backed by a fresh, live photo — keeping data genuine." />
+          <FeatureCard icon="📊" title="Ward Health" text="See how each ward is doing and which are making real progress." />
+          <FeatureCard icon="📋" title="Issue list" text="Browse and track every report, grouped by ward and filtered by category, severity and status." />
+          <FeatureCard icon="✅" title="Resolution verification" text="Authorities or citizens submit a cleanup photo, verified by a Xakkhi admin." />
         </div>
       </Section>
 
@@ -109,6 +122,9 @@ export default function AboutPage() {
           <InstaChip handle="xakkhi.dibrugarh" />
           <InstaChip handle="royannwesha" />
         </div>
+        <a href="mailto:xakkhi.official@gmail.com" style={{ display: 'inline-block', marginTop: '12px', fontSize: '12px', color: 'rgba(28,28,28,0.5)', textDecoration: 'none' }}>
+          xakkhi.official@gmail.com
+        </a>
         <div style={{ fontSize: '11px', color: 'rgba(28,28,28,0.25)', marginTop: '18px', fontFamily: 'monospace' }}>
           Xakkhi · v1.0 · 2026
         </div>
@@ -117,10 +133,10 @@ export default function AboutPage() {
   );
 }
 
-function Section({ title, children }) {
+function Section({ title, titleStyle, children }) {
   return (
     <div style={{ padding: '24px 16px 0' }}>
-      <h2 style={{ fontSize: '12px', fontWeight: '800', color: 'rgba(28,28,28,0.4)', letterSpacing: '0.6px', textTransform: 'uppercase', margin: '0 0 12px' }}
+      <h2 style={{ fontSize: '13px', fontWeight: '800', color: 'rgba(28,28,28,0.5)', letterSpacing: '0.6px', textTransform: 'uppercase', margin: '0 0 12px', ...titleStyle }}
         dangerouslySetInnerHTML={{ __html: title }} />
       {children}
     </div>
@@ -151,6 +167,19 @@ function Badge({ icon, title, text }) {
       <div style={{ fontSize: '22px' }}>{icon}</div>
       <div style={{ fontSize: '14px', fontWeight: '700', color: '#1C1C1C', marginTop: '8px' }}>{title}</div>
       <div style={{ fontSize: '12px', color: 'rgba(28,28,28,0.5)', lineHeight: 1.4, marginTop: '2px' }}>{text}</div>
+    </div>
+  );
+}
+
+function FeatureCard({ icon, title, text, wide }) {
+  return (
+    <div style={{
+      gridColumn: wide ? '1 / -1' : 'auto',
+      background: 'white', borderRadius: '14px', border: '1px solid rgba(0,0,0,0.06)', padding: '14px',
+    }}>
+      <div style={{ fontSize: '22px' }}>{icon}</div>
+      <div style={{ fontSize: '14px', fontWeight: '700', color: '#1C1C1C', marginTop: '8px' }}>{title}</div>
+      <div style={{ fontSize: '12px', color: 'rgba(28,28,28,0.5)', lineHeight: 1.45, marginTop: '3px' }}>{text}</div>
     </div>
   );
 }
