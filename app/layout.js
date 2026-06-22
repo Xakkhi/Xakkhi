@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
 import { ReportsProvider } from '../components/ReportsProvider';
 import { AuthProvider } from '../components/AuthProvider';
+import { Analytics } from '@vercel/analytics/next';
 
 const fraunces = Fraunces({
   subsets: ['latin'],
@@ -60,6 +61,7 @@ export default function RootLayout({ children }) {
             <BottomNav />
           </ReportsProvider>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
