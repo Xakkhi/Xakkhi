@@ -108,6 +108,16 @@ const MAP_STYLES = [
   { featureType: 'landscape.man_made', elementType: 'geometry', stylers: [{ visibility: 'off' }] },
 ];
 
+// ─── Map movement limits ─────────────────────────────────────────────────────
+// Keep users focused on Dibrugarh: they can pan only within these bounds and
+// can't zoom out past minZoom. Loosen the margins / zoom or delete `restriction`
+// below to remove the limits later.
+const MAP_LIMITS = {
+  bounds: { north: 27.62, south: 27.34, west: 94.74, east: 95.09 },
+  minZoom: 9, // furthest zoom-out (bounds above also limit how far out it goes)
+  maxZoom: 18, // closest zoom-in (street level)
+};
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export default function MapView({ filters, reports = [] }) {
@@ -131,6 +141,9 @@ export default function MapView({ filters, reports = [] }) {
         const map = new window.google.maps.Map(mapRef.current, {
           center: { lat: CITY_CENTER[0], lng: CITY_CENTER[1] },
           zoom: 14,
+          minZoom: MAP_LIMITS.minZoom,
+          maxZoom: MAP_LIMITS.maxZoom,
+          restriction: { latLngBounds: MAP_LIMITS.bounds, strictBounds: true },
           mapTypeId: 'roadmap',
           disableDefaultUI: true,
           styles: MAP_STYLES,
