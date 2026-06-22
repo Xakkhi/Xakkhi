@@ -50,7 +50,7 @@ function TelegramIcon({ size = 18 }) {
 }
 
 const SOCIALS = [
-  { name: 'Instagram', label: 'Instagram', href: 'https://instagram.com/xakkhi', Icon: InstagramIcon },
+  { name: 'Instagram', label: 'Instagram', href: 'https://instagram.com/xakkhi.dibrugarh', Icon: InstagramIcon },
   { name: 'X', label: 'Twitter / X', href: 'https://twitter.com/xakkhi', Icon: XIcon },
   { name: 'Telegram', label: 'Telegram', href: 'https://t.me/xakkhi', Icon: TelegramIcon },
 ];

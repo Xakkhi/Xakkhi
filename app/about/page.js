@@ -29,7 +29,7 @@ export default function AboutPage() {
           Dibrugarh's Civic Eye
         </div>
         <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', marginTop: '16px', lineHeight: 1.6, maxWidth: '420px', marginLeft: 'auto', marginRight: 'auto' }}>
-          A citizen-run map of civic issues across Dibrugarh — garbage, potholes, blocked drains, broken streetlights — tied directly to the officials responsible for fixing them.
+          A real-time tracker map of local civic issues like garbage, drainage, roads, streetlights and riverbanks. It gives citizens and the administration one shared, transparent picture — so problems get seen and resolved faster.
         </div>
       </div>
 
@@ -44,9 +44,9 @@ export default function AboutPage() {
 
       {/* How it works */}
       <Section title="How it works">
-        <Step n={1} title="Spot an issue" text="See garbage, a pothole, a blocked drain or a dead streetlight in your neighbourhood." />
-        <Step n={2} title="Report it in seconds" text="Snap a photo, pick the type and severity. Your location auto-fills the ward. No login, fully anonymous." />
-        <Step n={3} title="Track accountability" text="Every report maps to your ward officer and the chain above them — so it's clear who must act, and whether they did." />
+        <Step n={1} title="Report an issue" text="Take a photo on the spot, get your location tagged, enter a few details and submit. No login, fully anonymous." />
+        <Step n={2} title="Track issue" text="Every report is visible on a live, interactive map and tracker — so the right people can take action, and progress is visible to everyone." />
+        <Step n={3} title="Verify resolution" text="Authorities or anyone can submit a photo of a successful cleanup or resolution, and get it verified by a Xakkhi admin." />
       </Section>
 
       {/* What you can report */}
@@ -65,14 +65,14 @@ export default function AboutPage() {
         </div>
       </Section>
 
-      {/* Accountability */}
-      <Section title="Built on accountability">
+      {/* Working together */}
+      <Section title="Working together">
         <div style={{ background: 'white', borderRadius: '14px', border: '1px solid rgba(0,0,0,0.06)', padding: '16px' }}>
           <p style={{ fontSize: '14px', color: 'rgba(28,28,28,0.7)', lineHeight: 1.6, margin: 0 }}>
-            A report isn't just a pin on a map. Each one is linked to the people responsible — your <strong>Ward Councillor</strong>, the <strong>DMC</strong>, and your elected <strong>MLA</strong> and <strong>MP</strong>.
+            Each report becomes part of one shared, real-time dashboard — sorted by ward and shared with the people who can help: your <strong>Ward Councillor</strong>, the <strong>DMC</strong>, and your elected <strong>MLA</strong> and <strong>MP</strong>.
           </p>
           <p style={{ fontSize: '14px', color: 'rgba(28,28,28,0.7)', lineHeight: 1.6, margin: '10px 0 0' }}>
-            The leaderboard ranks every ward by how much gets actually resolved — turning quiet neglect into something everyone can see.
+            <strong>Ward Health</strong> highlights the wards making real progress — so good work gets recognised.
           </p>
         </div>
       </Section>
@@ -102,10 +102,14 @@ export default function AboutPage() {
         <div style={{ fontSize: '13px', color: 'rgba(28,28,28,0.5)', lineHeight: 1.6 }}>
           Made for the people of Dibrugarh.
         </div>
-        <div style={{ fontSize: '12px', color: 'rgba(28,28,28,0.35)', marginTop: '4px' }}>
-          Ward corporator elections expected mid-2026.
+        <div style={{ fontSize: '13px', color: 'rgba(28,28,28,0.55)', marginTop: '10px', fontWeight: '600' }}>
+          Founded by Annwesha Roy
         </div>
-        <div style={{ fontSize: '11px', color: 'rgba(28,28,28,0.25)', marginTop: '14px', fontFamily: 'monospace' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '12px' }}>
+          <InstaChip handle="xakkhi.dibrugarh" />
+          <InstaChip handle="royannwesha" />
+        </div>
+        <div style={{ fontSize: '11px', color: 'rgba(28,28,28,0.25)', marginTop: '18px', fontFamily: 'monospace' }}>
           Xakkhi · v1.0 · 2026
         </div>
       </div>
@@ -148,6 +152,29 @@ function Badge({ icon, title, text }) {
       <div style={{ fontSize: '14px', fontWeight: '700', color: '#1C1C1C', marginTop: '8px' }}>{title}</div>
       <div style={{ fontSize: '12px', color: 'rgba(28,28,28,0.5)', lineHeight: 1.4, marginTop: '2px' }}>{text}</div>
     </div>
+  );
+}
+
+function InstaChip({ handle }) {
+  return (
+    <a
+      href={`https://instagram.com/${handle}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        padding: '7px 12px', background: 'white', borderRadius: '20px',
+        border: '1px solid rgba(0,0,0,0.08)', textDecoration: 'none',
+        fontSize: '12px', fontWeight: '600', color: '#1C1C1C',
+      }}
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C13584" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="2" width="20" height="20" rx="5" />
+        <circle cx="12" cy="12" r="4" />
+        <circle cx="17.5" cy="6.5" r="1.1" fill="#C13584" stroke="none" />
+      </svg>
+      @{handle}
+    </a>
   );
 }
 
