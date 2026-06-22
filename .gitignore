@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# stray personal file kept in the working tree but never committed
+M24-Physics.pdf
+
 # debug
 npm-debug.log*
 yarn-debug.log*

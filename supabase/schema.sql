@@ -1,6 +1,10 @@
 -- ============================================================================
 -- Xakkhi সাক্ষী — Database Schema
 -- Run this in Supabase SQL Editor (https://supabase.com/dashboard → SQL Editor)
+--
+-- This file mirrors the live database structure. The 22 wards / officials the
+-- app actually renders are sourced from data/wards.js at runtime — the `wards`
+-- table below is legacy and not read by the app (kept for completeness).
 -- ============================================================================
 
 -- ─── Reports table ──────────────────────────────────────────────────────────
@@ -23,7 +27,16 @@ create table if not exists reports (
   resolved_at timestamptz,
   resolved_by_citizen boolean default false,
   seen_count integer default 0,
-  report_id_short text unique
+  report_id_short text unique,
+  -- Moderation / lifecycle fields (added in the Phase B review-queue work)
+  clean_days integer,
+  cleanup_status text,
+  flag_status text,
+  flag_reason text,
+  flag_photo_url text,
+  verification_photo_url text,
+  citizen_count integer default 1,
+  is_removed boolean not null default false
 );
 
 -- Auto-generate short IDs like XK-2026-0001
@@ -62,7 +75,23 @@ create or replace trigger trg_reports_updated_at
   for each row
   execute function update_updated_at();
 
--- ─── Wards table ────────────────────────────────────────────────────────────
+-- ─── Report actions (citizen suggestions: cleanups & flags) ─────────────────
+-- Citizens insert "pending" suggestions; only admins can read/approve them via
+-- the /review queue. Approving a cleanup resolves the report; approving a flag
+-- soft-removes it (reports.is_removed = true).
+
+create table if not exists report_actions (
+  id uuid primary key default gen_random_uuid(),
+  report_id uuid not null references reports(id) on delete cascade,
+  action_type text not null check (action_type in ('cleanup', 'flag')),
+  photo_url text,
+  note text,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  created_at timestamptz not null default now(),
+  reviewed_at timestamptz
+);
+
+-- ─── Wards table (legacy — app reads data/wards.js, not this) ────────────────
 
 create table if not exists wards (
   ward_number integer primary key,
@@ -91,26 +120,58 @@ create table if not exists report_seen (
   primary key (report_id, device_fingerprint)
 );
 
+-- ─── Admin allow-list ───────────────────────────────────────────────────────
+-- Mirrors the client allow-list in data/admins.js. Used by RLS policies to gate
+-- moderation. Keep both lists in sync.
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+as $$
+  select coalesce(auth.jwt() ->> 'email', '') in (
+    'xakkhi.official@gmail.com',
+    'royannwesha01@gmail.com'
+  );
+$$;
+
 -- ─── Row Level Security ─────────────────────────────────────────────────────
 
 alter table reports enable row level security;
+alter table report_actions enable row level security;
 alter table wards enable row level security;
 alter table report_seen enable row level security;
 
--- Anyone can read reports and wards
+-- reports: anyone reads; anyone inserts a *fresh* report (forge-able fields
+-- pinned to their defaults); only service_role / admins update; only service_role deletes.
 create policy "Public read reports" on reports for select using (true);
-create policy "Public read wards" on wards for select using (true);
-create policy "Public read report_seen" on report_seen for select using (true);
 
--- Anyone can insert reports (anonymous submissions)
-create policy "Public insert reports" on reports for insert with check (true);
+create policy "Public insert reports" on reports for insert
+  with check (
+    status = 'unresolved'
+    and coalesce(is_removed, false) = false
+    and resolved_at is null
+    and after_photo_url is null
+    and coalesce(resolved_by_citizen, false) = false
+    and coalesce(seen_count, 0) = 0
+  );
 
--- Anyone can insert report_seen
-create policy "Public insert report_seen" on report_seen for insert with check (true);
-
--- Only service role can update/delete (admin operations)
 create policy "Service update reports" on reports for update using (auth.role() = 'service_role');
+create policy "reports update admin" on reports for update to authenticated using (is_admin()) with check (is_admin());
 create policy "Service delete reports" on reports for delete using (auth.role() = 'service_role');
+
+-- report_actions: anyone files a pending cleanup/flag; only admins read & decide.
+create policy "report_actions insert anon" on report_actions for insert to anon, authenticated
+  with check (status = 'pending' and action_type in ('cleanup', 'flag'));
+create policy "report_actions read admin" on report_actions for select to authenticated using (is_admin());
+create policy "report_actions update admin" on report_actions for update to authenticated using (is_admin()) with check (is_admin());
+
+-- wards: public read.
+create policy "Public read wards" on wards for select using (true);
+
+-- report_seen: public read + insert (dedup only, no sensitive data).
+create policy "Public read report_seen" on report_seen for select using (true);
+create policy "Public insert report_seen" on report_seen for insert with check (true);
 
 -- ─── Seed all 22 wards ──────────────────────────────────────────────────────
 
