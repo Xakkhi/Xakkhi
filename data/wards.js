@@ -262,3 +262,22 @@ export const MP = {
   party: 'BJP',
   constituency: 'Dibrugarh (Lok Sabha)',
 };
+
+// Sentinel ward for reports that fall inside Dibrugarh but outside the 22 wards.
+export const OTHER_AREA = {
+  wardNumber: 0,
+  areaName: 'Other areas',
+  areaNameLocal: '',
+  lat: null,
+  lng: null,
+  commissionerName: null,
+  commissionerPhone: null,
+  commissionerPosition: null,
+  commissionerParty: null,
+};
+
+// Resolve a ward number (incl. 0 = Other areas) to its record, or null.
+export function resolveWard(n) {
+  if (n === 0) return OTHER_AREA;
+  return WARDS.find((w) => w.wardNumber === n) || null;
+}

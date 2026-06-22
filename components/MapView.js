@@ -192,7 +192,8 @@ export default function MapView({ filters, reports = [] }) {
       }
     });
 
-    const maxCount = Math.max(1, ...Object.values(unresolvedByWard));
+    // Scale only by the 22 wards — "Other areas" (ward 0) has no polygon to shade.
+    const maxCount = Math.max(1, ...Object.keys(WARD_BOUNDARIES).map((k) => unresolvedByWard[k] || 0));
 
     // Draw ward boundary polygons with heat coloring.
     // Every ward gets the light base shade (t=0) so the whole city reads as one

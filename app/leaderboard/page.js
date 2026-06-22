@@ -57,13 +57,14 @@ export default function WardHealthPage() {
     });
 
     const rows = Object.entries(byWard).map(([num, s]) => {
-      const ward = WARDS.find((w) => w.wardNumber === Number(num));
+      const n = Number(num);
+      const ward = WARDS.find((w) => w.wardNumber === n);
       const open = s.total - s.resolved;
       const rate = s.total > 0 ? s.resolved / s.total : 0;
       return {
-        wardNumber: Number(num),
-        areaName: ward?.areaName || `Ward ${num}`,
-        commissionerName: ward?.commissionerName || 'Vacant',
+        wardNumber: n,
+        areaName: n === 0 ? 'Other areas' : (ward?.areaName || `Ward ${num}`),
+        commissionerName: n === 0 ? '—' : (ward?.commissionerName || 'Vacant'),
         total: s.total,
         resolved: s.resolved,
         open,
@@ -191,7 +192,7 @@ function WardRow({ ward, index }) {
         width: '32px', height: '32px', borderRadius: '9px', background: '#EEEDE7', color: '#1C1C1C',
         display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '13px', flexShrink: 0,
       }}>
-        {ward.wardNumber}
+        {ward.wardNumber === 0 ? '–' : ward.wardNumber}
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>

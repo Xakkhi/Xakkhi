@@ -592,7 +592,7 @@ function LocationBar({ status, location, onRetry }) {
         <span style={{ fontSize: '18px' }}>📍</span>
         <div>
           <div style={{ fontWeight: '700', fontSize: '13px', color: '#16A34A' }}>
-            Ward {location.ward.wardNumber} · {location.ward.areaName}
+            {location.ward.wardNumber === 0 ? location.ward.areaName : `Ward ${location.ward.wardNumber} · ${location.ward.areaName}`}
           </div>
           <div style={{ fontSize: '11px', color: 'rgba(22,163,74,0.7)' }}>
             GPS verified · {location.lat.toFixed(4)}, {location.lng.toFixed(4)}

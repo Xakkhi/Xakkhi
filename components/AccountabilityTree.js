@@ -53,7 +53,9 @@ function RepCard({ name, role, party, slug, avatarColor }) {
 }
 
 export default function AccountabilityTree({ wardNumber, ward }) {
-  const councillorName = ward?.commissionerName || 'Vacant';
+  const isOther = !wardNumber || wardNumber === 0;
+  const councillorName = isOther ? 'Not under a ward' : (ward?.commissionerName || 'Vacant');
+  const councillorSlug = isOther ? null : `ward-${wardNumber}`;
 
   return (
     <div>
@@ -86,7 +88,7 @@ export default function AccountabilityTree({ wardNumber, ward }) {
             </div>
           ))}
           <Connector />
-          <Node role="Ward Councillor" name={councillorName} slug={`ward-${wardNumber}`} highlight />
+          <Node role="Ward Councillor" name={councillorName} slug={councillorSlug} highlight />
         </div>
 
         {/* Administration */}
@@ -104,7 +106,7 @@ export default function AccountabilityTree({ wardNumber, ward }) {
           YOUR REPRESENTATIVES
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <RepCard name={councillorName} role="Ward councillor" party={ward?.commissionerParty} slug={`ward-${wardNumber}`} avatarColor="#F77F00" />
+          <RepCard name={councillorName} role="Ward councillor" party={ward?.commissionerParty} slug={councillorSlug} avatarColor="#F77F00" />
           <RepCard name={MLA.name} role="MLA" party={MLA.party} slug="mla" avatarColor="#DC2626" />
           <RepCard name={MP.name} role="MP" party={MP.party} slug="mp" avatarColor="#7C3AED" />
         </div>

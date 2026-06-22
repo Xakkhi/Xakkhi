@@ -100,15 +100,15 @@ export default function ListPage() {
                     fontWeight: '800', fontSize: '14px', flexShrink: 0,
                     color: unresolvedInWard > 0 ? '#DC2626' : '#16A34A',
                   }}>
-                    {wardNumber}
+                    {wardNumber === 0 ? '–' : wardNumber}
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: '700', fontSize: '14px', color: '#1C1C1C' }}>
-                      {ward?.areaName || `Ward ${wardNumber}`}
+                      {wardNumber === 0 ? 'Other areas' : (ward?.areaName || `Ward ${wardNumber}`)}
                     </div>
                     <div style={{ fontSize: '12px', color: 'rgba(28,28,28,0.45)', marginTop: '1px' }}>
-                      {ward?.commissionerName || 'Vacant'} · {wardReports.length} reports
+                      {(wardNumber === 0 ? 'Outside the wards' : (ward?.commissionerName || 'Vacant'))} · {wardReports.length} reports
                     </div>
                   </div>
 

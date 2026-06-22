@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 import { detectWard } from '../../../lib/ward-detector';
-import { WARDS } from '../../../data/wards';
+import { WARDS, resolveWard } from '../../../data/wards';
 import { CATEGORIES, SEVERITY_COLORS } from '../../../data/categories';
 import { SHOW_OFFICIAL_CONTACT } from '../../../data/officials';
 import { CATEGORY_LIST } from '../../../data/categories';
@@ -71,7 +71,7 @@ export default function ReportDetailPage() {
   }
 
   const cat = CATEGORIES[report.category];
-  const ward = WARDS.find((w) => w.wardNumber === report.ward_number);
+  const ward = resolveWard(report.ward_number);
   const sevColor = SEVERITY_COLORS[report.severity] || '#F77F00';
   const isResolved = report.status === 'resolved';
   const days = daysOld(report.created_at);
@@ -290,14 +290,16 @@ export default function ReportDetailPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: '800', fontSize: '14px', color: '#F77F00', flexShrink: 0,
             }}>
-              {report.ward_number}
+              {report.ward_number === 0 ? '–' : report.ward_number}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: '700', fontSize: '14px', color: '#1C1C1C' }}>
                 {ward?.areaName || `Ward ${report.ward_number}`}
               </div>
               <div style={{ fontSize: '12px', color: 'rgba(28,28,28,0.5)' }}>
-                {ward?.commissionerName ? `${ward.commissionerName} · Ward councillor` : 'Vacant'}
+                {report.ward_number === 0
+                  ? 'Not under a specific ward'
+                  : (ward?.commissionerName ? `${ward.commissionerName} · Ward councillor` : 'Vacant')}
               </div>
             </div>
             {SHOW_OFFICIAL_CONTACT && ward?.commissionerPhone && (
