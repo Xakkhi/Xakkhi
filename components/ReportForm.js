@@ -342,7 +342,6 @@ export default function ReportForm() {
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: '4px',
-                    gridColumn: CATEGORY_LIST.indexOf(c) === 4 ? '1 / -1' : 'auto',
                   }}
                 >
                   <span style={{ fontSize: '22px', lineHeight: 1 }}>{c.emoji}</span>
