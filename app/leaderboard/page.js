@@ -9,9 +9,13 @@ import { CATEGORIES } from '../../data/categories';
 const SHORT_CAT = {
   garbage: 'Garbage',
   pothole: 'Potholes',
-  drain: 'Drains',
-  openDrain: 'Open drains',
-  streetlight: 'Streetlights',
+  drainage: 'Drainage',
+  streetlight: 'Lights & wires',
+  flooding: 'Flooding',
+  riverbank: 'Riverbank',
+  // legacy keys from before the taxonomy revamp
+  drain: 'Drainage',
+  openDrain: 'Drainage',
 };
 
 const SORTS = [

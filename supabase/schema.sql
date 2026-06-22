@@ -12,7 +12,7 @@ create table if not exists reports (
   photo_url text,
   before_photo_url text,
   after_photo_url text,
-  category text not null check (category in ('garbage', 'pothole', 'drain', 'openDrain', 'streetlight')),
+  category text not null check (category in ('garbage', 'pothole', 'drainage', 'streetlight', 'flooding', 'riverbank')),
   sub_category text,
   severity text not null check (severity in ('minor', 'moderate', 'severe', 'critical')),
   description text,

@@ -48,14 +48,15 @@ const WARD_REPORT_COUNTS = {
   21: 5, 22: 6,
 };
 
-const CATEGORIES = ['garbage', 'pothole', 'drain', 'openDrain', 'streetlight'];
+const CATEGORIES = ['garbage', 'pothole', 'drainage', 'streetlight', 'flooding', 'riverbank'];
 const SEVERITIES = ['minor', 'moderate', 'severe', 'critical'];
 const SUB_TYPES = {
   garbage: ['Household Waste', 'Construction Debris', 'Mixed Waste', 'E-Waste'],
   pothole: ['Single Pothole', 'Multiple Potholes', 'Road Sinking', 'Crack'],
-  drain: ['Slow Drainage', 'Fully Blocked', 'Backflow', 'Mosquito Breeding'],
-  openDrain: ['Cover Missing', 'Damaged Slab', "Children's Hazard", 'Partial Cover'],
-  streetlight: ['Single Light Out', 'Multiple Out', 'Flickering', 'Pole Damaged'],
+  drainage: ['Cover Missing', 'Fully Blocked', 'Overflowing', 'No Concrete Drain', 'Damaged Slab'],
+  streetlight: ['No Streetlights', 'Non-functional Streetlight', 'Wires Exposed', 'Tangled Overhead Wires', 'Transformer Risk'],
+  flooding: ['Waterlogged Area', 'Pipeline Leakage', 'Poor Drainage'],
+  riverbank: ['Erosion', 'Embankment Issues', 'Garbage Dumping', 'Wetland Destruction'],
 };
 const LANDMARKS = [
   'Near bus stop', 'Behind temple', 'Main road junction', 'Near school gate',
