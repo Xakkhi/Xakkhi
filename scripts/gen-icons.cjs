@@ -1,5 +1,7 @@
 // Generates the app/touch icons + favicon.ico from app/icon.svg.
-// Run after editing app/icon.svg:  node scripts/gen-icons.cjs
+// Outputs are committed; only run this when app/icon.svg changes.
+// To regenerate:  npm i -D sharp png-to-ico && node scripts/gen-icons.cjs
+// (sharp / png-to-ico are intentionally NOT committed dependencies.)
 const sharp = require('sharp');
 const _pti = require('png-to-ico');
 const pngToIco = typeof _pti === 'function' ? _pti : _pti.default;
