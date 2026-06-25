@@ -158,7 +158,7 @@ export default function BottomNav() {
               }}
             >
               <span style={{ display: 'inline-flex', lineHeight: 1 }}><item.Icon /></span>
-              <span style={{ fontSize: '10px', fontWeight: isActive ? '700' : '500', letterSpacing: '0.3px' }}>
+              <span style={{ fontSize: '11px', fontWeight: isActive ? '700' : '500', letterSpacing: '0.3px' }}>
                 {item.label}
               </span>
             </Link>
@@ -183,7 +183,7 @@ export default function BottomNav() {
           }}
         >
           <span style={{ display: 'inline-flex', lineHeight: 1 }}>{moreOpen ? <IconClose /> : <IconMore />}</span>
-          <span style={{ fontSize: '10px', fontWeight: moreActive || moreOpen ? '700' : '500', letterSpacing: '0.3px' }}>
+          <span style={{ fontSize: '11px', fontWeight: moreActive || moreOpen ? '700' : '500', letterSpacing: '0.3px' }}>
             More
           </span>
         </button>
