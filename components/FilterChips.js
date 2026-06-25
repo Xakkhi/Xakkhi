@@ -82,7 +82,7 @@ export default function FilterChips({ filters, onChange }) {
         <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
           <button style={chipBtn(!!filters.category)} onClick={() => toggleDropdown('category')}>
             {categoryLabel()}
-            <span style={{ fontSize: '9px', flexShrink: 0 }}>▾</span>
+            <span style={{ fontSize: '11px', flexShrink: 0 }}>▾</span>
           </button>
           {openDropdown === 'category' && (
             <Dropdown
@@ -100,7 +100,7 @@ export default function FilterChips({ filters, onChange }) {
         <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
           <button style={chipBtn(!!filters.severity)} onClick={() => toggleDropdown('severity')}>
             {severityLabel()}
-            <span style={{ fontSize: '9px', flexShrink: 0 }}>▾</span>
+            <span style={{ fontSize: '11px', flexShrink: 0 }}>▾</span>
           </button>
           {openDropdown === 'severity' && (
             <Dropdown
@@ -118,7 +118,7 @@ export default function FilterChips({ filters, onChange }) {
         <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
           <button style={chipBtn(!!filters.status)} onClick={() => toggleDropdown('status')}>
             {statusLabel()}
-            <span style={{ fontSize: '9px', flexShrink: 0 }}>▾</span>
+            <span style={{ fontSize: '11px', flexShrink: 0 }}>▾</span>
           </button>
           {openDropdown === 'status' && (
             <Dropdown
