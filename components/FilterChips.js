@@ -50,7 +50,7 @@ export default function FilterChips({ filters, onChange }) {
     border: `1.5px solid ${active ? '#F77F00' : 'rgba(28,28,28,0.18)'}`,
     background: active ? '#FFF3E0' : 'white',
     color: active ? '#F77F00' : '#1C1C1C',
-    fontSize: '12px',
+    fontSize: '13px',
     fontWeight: '600',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
@@ -147,7 +147,7 @@ export default function FilterChips({ filters, onChange }) {
             href="/"
             style={{
               padding: '6px 12px',
-              fontSize: '12px',
+              fontSize: '13px',
               fontWeight: '600',
               background: isMapView ? '#1C1C1C' : 'white',
               color: isMapView ? 'white' : '#1C1C1C',
@@ -161,7 +161,7 @@ export default function FilterChips({ filters, onChange }) {
             href="/list"
             style={{
               padding: '6px 12px',
-              fontSize: '12px',
+              fontSize: '13px',
               fontWeight: '600',
               background: !isMapView ? '#1C1C1C' : 'white',
               color: !isMapView ? 'white' : '#1C1C1C',
