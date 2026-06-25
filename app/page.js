@@ -127,29 +127,6 @@ export default function HomePage() {
             <span style={{ fontSize: '20px' }}>+</span>
             Report an Issue
           </Link>
-
-          <Link
-            href="/leaderboard"
-            style={{
-              width: '54px',
-              height: '54px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: '#1C1C1C',
-              color: 'white',
-              borderRadius: '14px',
-              textDecoration: 'none',
-              flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-            }}
-          >
-            <span style={{ fontSize: '20px' }}>📊</span>
-            <span style={{ fontSize: '9px', fontWeight: '700', opacity: 0.7, marginTop: '1px' }}>
-              {filtered.length}
-            </span>
-          </Link>
         </div>
       </div>
     </div>
