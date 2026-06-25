@@ -118,13 +118,12 @@ export default function HomePage() {
               borderRadius: '14px',
               padding: '16px',
               fontWeight: '800',
-              fontSize: '16px',
+              fontSize: '17px',
               textDecoration: 'none',
               boxShadow: '0 4px 16px rgba(247,127,0,0.4)',
               letterSpacing: '-0.2px',
             }}
           >
-            <span style={{ fontSize: '20px' }}>+</span>
             Report an Issue
           </Link>
         </div>
