@@ -19,6 +19,6 @@ export const ELECTED_BOARD = [
 // Appointed administrative head.
 export const ADMINISTRATION = {
   role: 'Commissioner, DMC',
-  name: 'Navas Kumar Das',
+  name: 'Shivani Jerngal (IAS)',
   slug: 'commissioner-dmc',
 };

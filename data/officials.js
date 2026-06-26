@@ -24,7 +24,7 @@ export const CITY_OFFICIALS = [
   },
   {
     slug: 'commissioner-dmc',
-    name: 'Navas Kumar Das',
+    name: 'Shivani Jerngal (IAS)',
     role: 'Commissioner, DMC',
     body: 'Dibrugarh Municipal Corporation',
     phone: null,
