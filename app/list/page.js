@@ -210,11 +210,10 @@ export default function ListPage() {
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
             background: '#F77F00', color: 'white', borderRadius: '14px',
-            padding: '16px', fontWeight: '800', fontSize: '16px',
+            padding: '16px', fontWeight: '800', fontSize: '17px',
             textDecoration: 'none', boxShadow: '0 4px 16px rgba(247,127,0,0.4)',
           }}
         >
-          <span style={{ fontSize: '20px' }}>+</span>
           Report an Issue
         </Link>
       </div>
