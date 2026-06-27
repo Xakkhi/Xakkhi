@@ -192,12 +192,15 @@ export default function ReportDetailPage() {
             </span>
           </div>
           <button onClick={handleDirections} style={{
-            display: 'inline-flex', alignItems: 'center', gap: '4px',
-            marginTop: '8px', marginLeft: '28px', padding: '6px 14px',
-            background: '#EFF6FF', color: '#2563EB', borderRadius: '20px',
-            border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            marginTop: '12px', marginLeft: '28px', padding: '11px 18px',
+            background: '#1A73E8', color: 'white', borderRadius: '12px',
+            border: 'none', fontSize: '14px', fontWeight: '700', cursor: 'pointer',
           }}>
-            Get directions →
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 2 L19 21 L12 17 L5 21 Z" />
+            </svg>
+            Get directions
           </button>
         </div>
 
