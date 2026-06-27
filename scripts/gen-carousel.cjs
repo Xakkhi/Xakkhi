@@ -52,7 +52,7 @@ function categories() {
 function cta() {
   return `<div style="width:${W}px;height:${H}px;background:${INK};display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;">
     <div style="position:absolute;top:64px;left:50%;transform:translateX(-50%);">${wordmark(46)}</div>
-    <div style="font-family:'Fraunces';font-weight:800;font-size:92px;line-height:1.12;color:#fff;">Be the first<br>to report.</div>
+    <div style="font-family:'Fraunces';font-weight:800;font-size:80px;line-height:1.12;color:#fff;">Submit your first<br>report now!</div>
     <div style="font-family:'DM Sans';font-size:34px;color:rgba(255,255,255,0.65);margin-top:30px;">Open it now — share with your ward.</div>
     <div style="margin-top:52px;background:${ORANGE};color:${INK};font-family:'DM Sans';font-weight:800;font-size:40px;padding:20px 50px;border-radius:50px;">xakkhi.in</div>
     <div style="position:absolute;bottom:54px;font-family:'DM Sans';font-size:28px;color:rgba(255,255,255,0.5);">@xakkhi.dibrugarh</div>
