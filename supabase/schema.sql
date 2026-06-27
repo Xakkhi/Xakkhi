@@ -47,9 +47,11 @@ declare
   seq int;
 begin
   yr := to_char(now(), 'YYYY');
-  select count(*) + 1 into seq
+  -- Use max existing sequence (+1), not count, so deletions never cause
+  -- duplicate-key collisions on report_id_short.
+  select coalesce(max(substring(report_id_short from 9)::int), 0) + 1 into seq
     from reports
-    where to_char(created_at, 'YYYY') = yr;
+    where report_id_short like 'XK-' || yr || '-%';
   new.report_id_short := 'XK-' || yr || '-' || lpad(seq::text, 4, '0');
   return new;
 end;
