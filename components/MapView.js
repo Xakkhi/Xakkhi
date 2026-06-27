@@ -266,8 +266,8 @@ export default function MapView({ filters, reports = [] }) {
     if (!mapInstanceRef.current) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        mapInstanceRef.current.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        mapInstanceRef.current.setZoom(16);
+        mapInstanceRef.current.panTo({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        mapInstanceRef.current.setZoom(MAP_LIMITS.maxZoom);
       },
       () => alert('Location access denied. Please enable location in your browser.')
     );
